@@ -1,0 +1,6 @@
+{
+  "name": "WordUp Africa Bible Reader",
+  "description": "An offline-first, distraction-free Bible reader with highlighting, notes, shareable verse images, and multiple translations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

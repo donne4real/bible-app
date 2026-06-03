@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const CACHE_NAME = 'wordup-africa-bible-v2';
 const ASSETS_TO_CACHE = [
   '/',
@@ -7,6 +8,22 @@ const ASSETS_TO_CACHE = [
   '/icon-192.png',
   '/icon-512.png',
   '/icon-maskable.png'
+=======
+const CACHE_NAME = 'wordup-africa-bible-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/icon.svg',
+  '/manifest.json',
+  '/src/main.tsx',
+  '/src/index.css',
+  '/src/App.tsx',
+  '/src/types.ts',
+  '/src/bibleStructure.ts',
+  '/src/bibleData.ts',
+  '/src/languagesData.ts',
+  '/src/readingPlansData.ts'
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
 ];
 
 // On installation, cache core app shell assets

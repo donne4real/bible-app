@@ -1,5 +1,8 @@
 {
+<<<<<<< HEAD
   "id": "wordup.africa.bible.reader",
+=======
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
   "name": "WordUp Africa Bible Reader",
   "short_name": "WordUp Africa",
   "description": "An offline-first, distraction-free Bible reader with highlighting, notes, shareable verse images, and multiple translations.",
@@ -8,6 +11,7 @@
   "background_color": "#18181b",
   "theme_color": "#d97706",
   "orientation": "portrait-primary",
+<<<<<<< HEAD
   "lang": "en",
   "categories": [
     "books",
@@ -34,10 +38,15 @@
       "purpose": "maskable"
     },
     {
+=======
+  "icons": [
+    {
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+<<<<<<< HEAD
     }
   ],
   "shortcuts": [
@@ -79,6 +88,14 @@
           "type": "image/png"
         }
       ]
+=======
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
     }
   ]
 }

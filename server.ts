@@ -43,6 +43,7 @@ async function startServer() {
 
   app.use(express.json());
 
+<<<<<<< HEAD
   // Enable CORS manually for cross-origin requests (Netlify, native Android app, etc.)
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -55,6 +56,8 @@ async function startServer() {
     next();
   });
 
+=======
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
   // API Route to fetch and dynamically translate Bible text
   app.get('/api/bible', async (req, res) => {
     try {

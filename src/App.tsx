@@ -453,6 +453,7 @@ export default function App() {
 
       // 4. Dynamic API Loading since not pre-bundled or cached yet
       try {
+<<<<<<< HEAD
         const isClientOnlyHost = typeof window !== 'undefined' && 
           window.location.hostname !== 'localhost' && 
           window.location.hostname !== '127.0.0.1' && 
@@ -505,6 +506,17 @@ export default function App() {
           }
         }
 
+=======
+        const url = `/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('Scripture book-chapter reference not found on server.');
+        }
+        
+        const payload = await response.json();
+        
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
         if (payload && payload.verses && payload.verses.length > 0) {
           // Cache permanently in localStorage for premium offline-first operations future load!
           localStorage.setItem(storageCacheKey, JSON.stringify(payload.verses));
@@ -512,7 +524,11 @@ export default function App() {
             setVerses(payload.verses);
           }
         } else {
+<<<<<<< HEAD
           throw new Error('Scripture source not available.');
+=======
+          throw new Error(payload.error || 'Format unknown');
+>>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
         }
       } catch (err: any) {
         console.warn("Bible API loading issue. Offline fallback triggered.", err);

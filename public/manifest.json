@@ -1,0 +1,84 @@
+{
+  "id": "wordup.africa.bible.reader",
+  "name": "WordUp Africa Bible Reader",
+  "short_name": "WordUp Africa",
+  "description": "An offline-first, distraction-free Bible reader with highlighting, notes, shareable verse images, and multiple translations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#d97706",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": [
+    "books",
+    "reference",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Read Genesis 1",
+      "short_name": "Genesis",
+      "description": "Begin scripture study with Genesis Chapter 1 in standard/African focus",
+      "url": "/?book=GEN&chapter=1",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open Psalm 23",
+      "short_name": "Psalms",
+      "description": "Find encouragement in Psalm 23",
+      "url": "/?book=PSA&chapter=23",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Read John 1",
+      "short_name": "John 1",
+      "description": "Open John Chapter 1 for study",
+      "url": "/?book=JHN&chapter=1",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

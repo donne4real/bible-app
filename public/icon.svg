@@ -1,100 +1,205 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
-    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#27272a" />
-      <stop offset="100%" stop-color="#0f0f11" />
-    </radialGradient>
-    
-    <!-- Golden Accent Gradient -->
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24" />
+    <!-- Background Diagonal Gradient -->
+    <linearGradient id="bgGrad" x1="10%" y1="10%" x2="90%" y2="90%">
+      <stop offset="0%" stop-color="#b45309" />    <!-- Rich rust orange on top-left -->
+      <stop offset="25%" stop-color="#7c2d12" />   <!-- Deep burnt sienna -->
+      <stop offset="70%" stop-color="#0f172a" />   <!-- Deep midnight blue -->
+      <stop offset="100%" stop-color="#020617" />  <!-- Darkest navy on bottom-right -->
+    </linearGradient>
+
+    <!-- Outer Yellow/Cyan Glow Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.9" />  <!-- Warm yellow-gold -->
+      <stop offset="40%" stop-color="#ea580c" stop-opacity="0.6" />  <!-- Rusty amber -->
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.8" /> <!-- Cosmic cyan-blue -->
+    </linearGradient>
+
+    <!-- Book Spine/Cover Linear Gradient -->
+    <linearGradient id="coverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="50%" stop-color="#451a03" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+
+    <!-- Left Page Sheen -->
+    <linearGradient id="pageSilverGradLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="20%" stop-color="#f8fafc" />
+      <stop offset="90%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+
+    <!-- Right Page Sheen -->
+    <linearGradient id="pageSilverGradRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="10%" stop-color="#ffffff" />
+      <stop offset="80%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+
+    <!-- Africa Gold/Orange half -->
+    <linearGradient id="africaGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fcd34d" />
       <stop offset="50%" stop-color="#f59e0b" />
       <stop offset="100%" stop-color="#b45309" />
     </linearGradient>
 
-    <!-- Halos and Rays style -->
-    <radialGradient id="glowGrad" cx="50%" cy="40%" r="40%">
-      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
-    </radialGradient>
+    <!-- Africa Green half -->
+    <linearGradient id="africaGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#065f46" />
+    </linearGradient>
+
+    <!-- Flame Layers Gradients -->
+    <linearGradient id="flameOuterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f87171" />  <!-- Soft top red -->
+      <stop offset="40%" stop-color="#ef4444" /> <!-- Crimson -->
+      <stop offset="100%" stop-color="#c2410c" /> <!-- Burnt orange base -->
+    </linearGradient>
+
+    <linearGradient id="flameMiddleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c" />  <!-- Light orange -->
+      <stop offset="100%" stop-color="#ea580c" /> <!-- Intense orange -->
+    </linearGradient>
+
+    <linearGradient id="flameInnerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />  <!-- White core -->
+      <stop offset="40%" stop-color="#fef08a" /> <!-- Soft yellow -->
+      <stop offset="100%" stop-color="#f59e0b" /> <!-- Amber base -->
+    </linearGradient>
+
+    <!-- Ambient Shadow Filter -->
+    <filter id="ambientShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#020617" flood-opacity="0.65" />
+    </filter>
+
+    <!-- Flame Backlight Glow Filter -->
+    <filter id="flameGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
   </defs>
 
-  <!-- Solid rounded base background for squircle mask compatibility -->
+  <!-- 1. BASE SQUIRCLE FRAME -->
   <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bgGrad)" />
 
-  <!-- Ambient Golden Glow -->
-  <circle cx="256" cy="240" r="180" fill="url(#glowGrad)" />
+  <!-- 2. STAGE GLOW EFFECT / OUTER HIGHLIGHT EMBOSS -->
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="url(#borderGrad)" stroke-width="5" opacity="0.8" />
 
-  <!-- Outer Ring -->
-  <circle cx="256" cy="240" r="160" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-opacity="0.4" stroke-dasharray="12 6" />
+  <!-- 3. MAIN COMPOSITION GROUP (WITH AMBIENT DROPSHADOW) -->
+  <g filter="url(#ambientShadow)">
 
-  <!-- Abstract Africa Silhouette in background of Bible -->
-  <path d="M220,110 
-           C260,105 285,120 310,140 
-           C325,152 355,160 365,185 
-           C375,210 330,230 335,260 
-           C340,290 350,310 325,340 
-           C305,364 285,395 270,410 
-           C260,420 252,410 245,390 
-           C235,360 220,350 210,330 
-           C195,300 170,280 162,250 
-           C155,220 165,200 170,180 
-           C174,165 178,135 200,115
-           Z" 
-        fill="url(#goldGrad)" 
-        opacity="0.12" />
+    <!-- 3A. STYLIZED OPEN BIBLE -->
+    <g transform="translate(0, 20)">
+      
+      <!-- Cover backing/underlay (rim of the open book on layout) -->
+      <path d="M 120,290 C 175,275 220,274 256,286 C 292,274 337,275 392,290 L 392,165 C 337,150 292,149 256,161 C 220,149 175,150 120,165 Z" fill="url(#coverGrad)" stroke="#090514" stroke-width="2" />
+      
+      <!-- Pages thickness gold stack -->
+      <path d="M 124,285 C 178,270 221,269 256,281 C 291,269 334,270 388,285 L 388,161 C 334,146 291,145 256,157 C 221,145 178,146 124,161 Z" fill="#d97706" opacity="0.95" />
 
-  <!-- Holy Radiance Rays -->
-  <g stroke="url(#goldGrad)" stroke-width="2" opacity="0.3">
-    <line x1="256" y1="240" x2="256" y2="150" />
-    <line x1="256" y1="240" x2="330" y2="180" />
-    <line x1="256" y1="240" x2="340" y2="240" />
-    <line x1="256" y1="240" x2="310" y2="300" />
-    <line x1="256" y1="240" x2="256" y2="320" />
-    <line x1="256" y1="240" x2="202" y2="300" />
-    <line x1="256" y1="240" x2="172" y2="240" />
-    <line x1="256" y1="240" x2="182" y2="180" />
+      <!-- Top Silver-White Sheets (Left and Right page splits) -->
+      <path d="M 128,280 C 180,265 222,264 256,276 L 256,152 C 222,140 180,141 128,156 Z" fill="url(#pageSilverGradLeft)" stroke="#334155" stroke-width="1.2" />
+      <path d="M 384,280 C 332,265 290,264 256,276 L 256,152 C 290,140 332,141 384,156 Z" fill="url(#pageSilverGradRight)" stroke="#334155" stroke-width="1.2" />
+
+      <!-- Center spine gutter shadow of book -->
+      <path d="M 254,152 L 258,152 L 258,276 L 254,276 Z" fill="#1e293b" opacity="0.5" />
+    </g>
+
+    <!-- 3B. AFRICA OUTLINE MAP LAYER (Directly overlapping the pages) -->
+    <!-- Colored split continent: Gold on left, Vibrant green on right -->
+    <g transform="translate(0, 10)">
+      
+      <!-- Madagascar Island (Green) -->
+      <path d="M 360,250 C 362,246 366,248 365,254 C 364,260 361,267 358,265 C 356,263 358,255 360,250 Z" fill="url(#africaGreenGrad)" stroke="#020617" stroke-width="2" />
+
+      <!-- Left half of Africa (Gold gradient) -->
+      <path d="M 256,120 
+               C 225,120 205,121 185,124
+               C 165,127 150,141 145,166
+               C 140,188 142,204 165,214
+               C 180,221 190,214 200,226
+               C 210,238 215,251 220,262
+               C 228,280 236,290 246,300
+               C 250,304 253,308 256,312
+               L 256,120 Z" 
+            fill="url(#africaGoldGrad)" 
+            stroke="#020617" 
+            stroke-width="2.5" 
+            stroke-linejoin="round" />
+
+      <!-- Right half of Africa (Green gradient) -->
+      <path d="M 256,120
+               C 278,120 292,125 304,131
+               C 316,137 322,148 322,158
+               C 322,168 330,173 340,178
+               C 348,183 354,198 344,208
+               C 334,218 325,218 320,228
+               C 315,238 310,248 304,258
+               C 292,278 280,288 270,298
+               C 264,304 260,308 256,312
+               L 256,120 Z" 
+            fill="url(#africaGreenGrad)" 
+            stroke="#020617" 
+            stroke-width="2.5" 
+            stroke-linejoin="round" />
+    </g>
+
+    <!-- 3C. THE HOLY SPIRIT FIRE FLAME (Centered in the layout) -->
+    <!-- Backlighting fire glow -->
+    <circle cx="256" cy="205" r="50" fill="#f59e0b" opacity="0.35" filter="url(#flameGlow)" />
+
+    <!-- Layered vector flame graphics -->
+    <g transform="translate(0, 5)">
+      
+      <!-- 1. Outer flame (Crimson/Red edge) -->
+      <path d="M 256,135
+               C 240,157 218,181 216,203
+               C 214,223 226,240 242,246
+               C 247,248 252,250 256,250
+               C 260,250 265,248 270,246
+               C 286,240 298,223 296,203
+               C 294,181 272,157 256,135 Z"
+            fill="url(#flameOuterGrad)"
+            stroke="#1e293b"
+            stroke-width="3.5"
+            stroke-linejoin="round" />
+
+      <!-- 2. Middle flame (Vibrant Orange tongues) -->
+      <path d="M 256,152
+               C 244,171 228,190 227,208
+               C 226,223 234,235 246,238
+               C 251,239 253,240 256,240
+               C 259,240 261,239 266,238
+               C 278,235 286,223 285,208
+               C 284,190 268,171 256,152 Z"
+            fill="url(#flameMiddleGrad)" />
+
+      <!-- 3. Inner flame (Bright Glowing Yellow/White Core) -->
+      <path d="M 256,175
+               C 247,189 239,201 239,213
+               C 239,223 245,229 256,229
+               C 267,229 273,223 273,213
+               C 273,201 265,189 256,175 Z"
+            fill="url(#flameInnerGrad)" />
+    </g>
+
+  </g> <!-- END COMPOSITION GROUP -->
+
+  <!-- 4. BRAND TYPOGRAPHY / LABELS AT THE BOTTOM OF LOGO -->
+  <!-- Clean premium modern tracking display typography -->
+  <g font-family="'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif" text-anchor="middle">
+    
+    <!-- Heavy drop shadow behind brand title -->
+    <text x="256" y="414" font-weight="900" font-size="34" fill="#020617" opacity="0.75" letter-spacing="1">WORD UP AFRICA</text>
+    <text x="256" y="451" font-weight="700" font-size="16" fill="#020617" opacity="0.75" letter-spacing="4.5">BIBLE READER</text>
+
+    <!-- High-contrast glossy white text foreground -->
+    <text x="250" y="410" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1" opacity="0.1">WORD UP AFRICA</text> <!-- Offset shine -->
+    <text x="256" y="410" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="1">WORD UP AFRICA</text>
+    <text x="256" y="447" font-weight="700" font-size="16" fill="#f8fafc" letter-spacing="4.5">BIBLE READER</text>
   </g>
 
-  <!-- Open Bible Stylized Book -->
-  <g transform="translate(136, 175)">
-    <!-- Behind base shadow -->
-    <path d="M120,115 C100,105 40,105 10,110 L10,18 C40,12 100,12 120,25 Z" fill="#000" opacity="0.2" transform="translate(4, 4)" />
-    <path d="M120,115 C140,105 200,105 230,110 L230,18 C200,12 140,12 120,25 Z" fill="#000" opacity="0.2" transform="translate(4, 4)" />
-
-    <!-- Hardcover backing backplates -->
-    <path d="M120,118 C100,107 35,107 5,113 L5,16 C35,10 100,10 120,22 Z" fill="#78350f" stroke="#b45309" stroke-width="2" />
-    <path d="M120,118 C140,107 205,107 235,113 L235,16 C205,10 140,10 120,22 Z" fill="#78350f" stroke="#b45309" stroke-width="2" />
-
-    <!-- Core Pages (Gold edges) -->
-    <path d="M120,114 C100,103 40,103 10,108 L10,13 C40,8 100,8 120,18 Z" fill="#fbbf24" opacity="0.8" />
-    <path d="M120,114 C140,103 200,103 230,108 L230,13 C200,8 140,8 120,18 Z" fill="#fbbf24" opacity="0.8" />
-
-    <!-- Top Main White Pages -->
-    <path d="M120,110 C100,99 43,99 15,104 L15,9 C43,4 100,4 120,14 Z" fill="#fafafa" stroke="#d4d4d8" stroke-width="1" />
-    <path d="M120,110 C140,99 197,99 225,104 L225,9 C197,4 140,4 120,14 Z" fill="#fafafa" stroke="#d4d4d8" stroke-width="1" />
-
-    <!-- Ribbon Marker -->
-    <path d="M117,14 L117,130 C117,133 123,133 123,130 L123,14 Z" fill="#dc2626" />
-    <path d="M117,130 L113,124 L123,130" fill="#dc2626" />
-
-    <!-- Cross Symbol on Left Page -->
-    <path d="M60,35 L70,35 L70,25 L75,25 L75,35 L85,35 L85,40 L75,40 L75,60 L70,60 L70,40 L60,40 Z" fill="#18181b" opacity="0.8" />
-
-    <!-- Aesthetic text lines/verses representation -->
-    <!-- Left page text lines -->
-    <line x1="30" y1="68" x2="105" y2="68" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="30" y1="78" x2="95" y2="78" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="30" y1="88" x2="105" y2="88" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-
-    <!-- Right page text lines -->
-    <line x1="135" y1="30" x2="210" y2="30" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="40" x2="200" y2="40" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="50" x2="210" y2="50" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="60" x2="190" y2="60" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="70" x2="210" y2="70" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="80" x2="205" y2="80" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-    <line x1="135" y1="90" x2="185" y2="90" stroke="#71717a" stroke-width="3" stroke-linecap="round" opacity="0.7" />
-  </g>
 </svg>

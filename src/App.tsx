@@ -28,7 +28,8 @@ import {
   Columns,
   Layers,
   ArrowLeftRight,
-  Key
+  Key,
+  DatabaseBackup
 } from 'lucide-react';
 import { BIBLE_BOOKS, getBookById } from './bibleStructure';
 import { OFFLINE_COLLECTION, GENESIS_1_FALLBACK, DAILY_WORDS_OF_ENCOURAGEMENT } from './bibleData';
@@ -40,6 +41,7 @@ import ThemeSelector from './components/ThemeSelector';
 import HighlightToolbar, { getHighlightClass } from './components/HighlightToolbar';
 import ShareCardModal from './components/ShareCardModal';
 import LanguagesGuideModal from './components/LanguagesGuideModal';
+import OfflineSyncModal from './components/OfflineSyncModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TRANSLATIONS = [
@@ -259,6 +261,10 @@ export default function App() {
   const [pickedChapter, setPickedChapter] = useState<number | null>(null);
   const [availableVerses, setAvailableVerses] = useState<number>(30); // default fallback
   const [loadingVersesCount, setLoadingVersesCount] = useState<boolean>(false);
+  
+  // Offline sync and storage dashboard states
+  const [showOfflineSync, setShowOfflineSync] = useState<boolean>(false);
+  const [cacheRefreshCounter, setCacheRefreshCounter] = useState<number>(0);
 
   // Search & Filters inside active reader
   const [activeSearch, setActiveSearch] = useState<string>('');
@@ -659,7 +665,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [selectedBook, selectedChapter, settings.translation]);
+  }, [selectedBook, selectedChapter, settings.translation, cacheRefreshCounter]);
 
   // --- Dynamic comparison loader ---
   useEffect(() => {
@@ -1254,6 +1260,22 @@ export default function App() {
             {/* Right Control blocks */}
             <div className="flex items-center gap-1 relative">
               
+              {/* Force Offline Download/Sync Dashboard Tool */}
+              <button
+                onClick={() => setShowOfflineSync(true)}
+                className={`p-2 rounded-xl relative transition ${
+                  showOfflineSync
+                    ? 'bg-amber-500/15 text-amber-600'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+                title="Manage offline books and local cache"
+              >
+                <DatabaseBackup className="w-5 h-5" />
+                {isOfflineMode && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-zinc-900 animate-pulse" />
+                )}
+              </button>
+
               {/* Toggles Zen reader mode */}
               <button
                 onClick={() => handleUpdateSettings({ zenMode: true })}
@@ -1551,6 +1573,16 @@ export default function App() {
                   className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 border-0 transition cursor-pointer"
                 >
                   John 1 (KJV/WEB)
+                </button>
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowOfflineSync(true)}
+                  className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm inline-flex cursor-pointer"
+                >
+                  <DatabaseBackup className="w-4 h-4" />
+                  Manage Offline Downloads / Caches
                 </button>
               </div>
             </div>
@@ -1994,6 +2026,17 @@ export default function App() {
         onClose={() => setShowShareCard(false)}
         selectedVerses={selectedVerses}
         translation={settings.translation}
+      />
+
+      {/* --- OFFLINE DOWNLOAD / STORAGE MANAGER MODAL --- */}
+      <OfflineSyncModal
+        isOpen={showOfflineSync}
+        onClose={() => setShowOfflineSync(false)}
+        currentTranslation={settings.translation}
+        translationsList={TRANSLATIONS}
+        currentBookId={selectedBook.id}
+        geminiApiKey={settings.geminiApiKey}
+        onRefreshTrigger={() => setCacheRefreshCounter(prev => prev + 1)}
       />
 
       {/* --- LANGUAGES & ABBREVIATION CODES REFERENCE GUIDE --- */}

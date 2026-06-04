@@ -43,7 +43,6 @@ async function startServer() {
 
   app.use(express.json());
 
-<<<<<<< HEAD
   // Enable CORS manually for cross-origin requests (Netlify, native Android app, etc.)
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -56,8 +55,6 @@ async function startServer() {
     next();
   });
 
-=======
->>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
   // API Route to fetch and dynamically translate Bible text
   app.get('/api/bible', async (req, res) => {
     try {
@@ -133,9 +130,14 @@ async function startServer() {
           .map((v: any) => `[Verse ${v.verse}] ${v.text}`)
           .join('\n');
 
-        // 3. Translate using Gemini API
-        const ai = getGeminiClient();
-        const prompt = `You are an expert translator specializing in translating holy scriptures into different world languages.
+        let translatedArray: any[] = [];
+        let translationSucceeded = false;
+
+        // Try to translate using Gemini if API key is present
+        if (process.env.GEMINI_API_KEY) {
+          try {
+            const ai = getGeminiClient();
+            const prompt = `You are an expert translator specializing in translating holy scriptures into different world languages.
 Translate the following English Bible verses (from the World English Bible version) into accurate, beautiful, and theologically clean ${langDetail.name} (${langDetail.native}) translation.
 
 Maintain the exact original verse numbers and formatting.
@@ -152,26 +154,27 @@ The JSON array must be structured exactly like this:
 Input Verses:
 ${versesList}`;
 
-        const geminiResponse = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-          },
-        });
+            const geminiResponse = await ai.models.generateContent({
+              model: 'gemini-3.5-flash',
+              contents: prompt,
+              config: {
+                responseMimeType: 'application/json',
+              },
+            });
 
-        const replyText = geminiResponse.text?.trim() || '[]';
-        let translatedArray: any[] = [];
-        try {
-          translatedArray = JSON.parse(replyText);
-        } catch (parseErr) {
-          console.error('Failed to parse Gemini translation JSON response:', replyText, parseErr);
-          throw new Error('The translation service returned an invalid response format.');
+            const replyText = geminiResponse.text?.trim() || '[]';
+            translatedArray = JSON.parse(replyText);
+            translationSucceeded = true;
+          } catch (aiErr) {
+            console.error('Failed dynamic AI scripture translation:', aiErr);
+          }
+        } else {
+          console.warn('GEMINI_API_KEY is not defined. Falling back to English web translation.');
         }
 
         // Map translated verses back into the standard structure
         mappedVerses = webData.verses.map((orig: any) => {
-          const translationMatch = Array.isArray(translatedArray)
+          const translationMatch = (translationSucceeded && Array.isArray(translatedArray))
             ? translatedArray.find((item: any) => Number(item.verse) === orig.verse)
             : null;
 
@@ -181,6 +184,7 @@ ${versesList}`;
             chapter: chapter,
             verse: orig.verse,
             text: translationMatch ? translationMatch.text : orig.text,
+            isFallback: !translationSucceeded
           };
         });
 

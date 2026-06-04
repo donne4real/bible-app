@@ -39,9 +39,6 @@ import ThemeSelector from './components/ThemeSelector';
 import HighlightToolbar, { getHighlightClass } from './components/HighlightToolbar';
 import ShareCardModal from './components/ShareCardModal';
 import LanguagesGuideModal from './components/LanguagesGuideModal';
-import ReadingPlansTracker from './components/ReadingPlansTracker';
-import BibleProgressDashboard from './components/BibleProgressDashboard';
-import { UserPlanProgress } from './readingPlansData';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TRANSLATIONS = [
@@ -101,6 +98,7 @@ export default function App() {
   const [verses, setVerses] = useState<Verse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [translationNotice, setTranslationNotice] = useState<string | null>(null);
   const [offlineCommentary, setOfflineCommentary] = useState<OfflineBookCommentary | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(() => {
     return typeof navigator !== 'undefined' ? !navigator.onLine : false;
@@ -194,77 +192,7 @@ export default function App() {
     localStorage.setItem('bible_compare_layout', compareLayout);
   }, [compareLayout]);
 
-  // Reading plan progress state loaded lazily
-  const [readingPlanProgress, setReadingPlanProgress] = useState<UserPlanProgress | null>(() => {
-    const raw = localStorage.getItem('bible_reading_plan_progress');
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch (_) {}
-    }
-    return null;
-  });
-
-  // Sync Reading plan progress to localStorage
-  useEffect(() => {
-    if (readingPlanProgress) {
-      localStorage.setItem('bible_reading_plan_progress', JSON.stringify(readingPlanProgress));
-    } else {
-      localStorage.removeItem('bible_reading_plan_progress');
-    }
-  }, [readingPlanProgress]);
-
-  // --- General Bible Reading Progress states ---
-  const [completedChapters, setCompletedChapters] = useState<string[]>(() => {
-    const raw = localStorage.getItem('bible_completed_chapters');
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch (_) {}
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('bible_completed_chapters', JSON.stringify(completedChapters));
-  }, [completedChapters]);
-
-  const [readingStreak, setReadingStreak] = useState<{ count: number; lastDate: string | null }>(() => {
-    const raw = localStorage.getItem('bible_reading_streak');
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch (_) {}
-    }
-    return { count: 0, lastDate: null };
-  });
-
-  const recordStreakActivity = () => {
-    const todayStr = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
-    if (readingStreak.lastDate === todayStr) {
-      return; // Already recorded today
-    }
-
-    let newCount = readingStreak.count;
-    if (readingStreak.lastDate) {
-      const prevDate = new Date(readingStreak.lastDate);
-      const todayDate = new Date(todayStr);
-      const diffTime = Math.abs(todayDate.getTime() - prevDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
-        newCount += 1;
-      } else if (diffDays > 1) {
-        newCount = 1; // reset broken streak
-      }
-    } else {
-      newCount = 1; // start first streak
-    }
-
-    const updatedStreak = { count: newCount, lastDate: todayStr };
-    setReadingStreak(updatedStreak);
-    localStorage.setItem('bible_reading_streak', JSON.stringify(updatedStreak));
-  };
+  // Reading plan and custom completion progress features were simplified from design.
 
   // --- Search History and Autocomplete states ---
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
@@ -397,6 +325,7 @@ export default function App() {
     const loadScriptureText = async () => {
       setLoading(true);
       setErrorStatus(null);
+      setTranslationNotice(null);
       setOfflineCommentary(null);
       setSelectedVerses([]); // reset active selections
 
@@ -406,7 +335,7 @@ export default function App() {
       const translation = settings.translation;
 
       // 1. Check PWA Static Preloaded DB (Local database in code)
-      const offlineVerses = getOfflineVerses(translation, bookId, chapter);
+      const offlineVerses = getOfflineVerses(translation, bookId, chapter, isOfflineMode);
       if (offlineVerses && offlineVerses.length > 0) {
         if (active) {
           setVerses(offlineVerses);
@@ -453,7 +382,6 @@ export default function App() {
 
       // 4. Dynamic API Loading since not pre-bundled or cached yet
       try {
-<<<<<<< HEAD
         const isClientOnlyHost = typeof window !== 'undefined' && 
           window.location.hostname !== 'localhost' && 
           window.location.hostname !== '127.0.0.1' && 
@@ -506,34 +434,52 @@ export default function App() {
           }
         }
 
-=======
-        const url = `/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error('Scripture book-chapter reference not found on server.');
-        }
-        
-        const payload = await response.json();
-        
->>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
         if (payload && payload.verses && payload.verses.length > 0) {
           // Cache permanently in localStorage for premium offline-first operations future load!
           localStorage.setItem(storageCacheKey, JSON.stringify(payload.verses));
           if (active) {
             setVerses(payload.verses);
+            if (payload.verses[0]?.isFallback) {
+              setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured in your settings.`);
+            }
           }
         } else {
-<<<<<<< HEAD
           throw new Error('Scripture source not available.');
-=======
-          throw new Error(payload.error || 'Format unknown');
->>>>>>> b60020c6a79047027a29eb304c41ec93355cdec2
         }
       } catch (err: any) {
         console.warn("Bible API loading issue. Offline fallback triggered.", err);
         
         if (active) {
+          // Attempt to load standard translation (WEB) directly from public bible-api.com CORS API as a graceful fallback
+          try {
+            const fallbackUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
+            const directResponse = await fetch(fallbackUrl);
+            if (directResponse.ok) {
+              const directPayload = await directResponse.json();
+              if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
+                const formattedFallbackVerses: Verse[] = directPayload.verses.map((v: any) => ({
+                  book_id: bookId,
+                  book_name: bookName,
+                  chapter: chapter,
+                  verse: v.verse,
+                  text: v.text
+                }));
+                setVerses(formattedFallbackVerses);
+                setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured in your settings.`);
+                
+                // Load offline commentary as supportive guide
+                const commentary = getOfflineCommentary(bookId);
+                if (commentary) {
+                  setOfflineCommentary(commentary);
+                }
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (fbErr) {
+            console.warn("Could not load direct public fallback verses", fbErr);
+          }
+
           // Look up offline study guides & commentary for 100% standalone offline experiences
           const commentary = getOfflineCommentary(bookId);
           if (commentary) {
@@ -600,7 +546,17 @@ export default function App() {
       const chapter = selectedChapter;
       const translation = compareTranslation;
 
-      // 1. Check offline curated collections bundle first
+      // 0. Check preloaded offline verses first
+      const offlineVerses = getOfflineVerses(translation, bookId, chapter, isOfflineMode);
+      if (offlineVerses && offlineVerses.length > 0) {
+        if (active) {
+          setCompareVerses(offlineVerses);
+          setCompareLoading(false);
+        }
+        return;
+      }
+
+      // 1. Check offline curated collections bundle second
       if ((bookId === 'PSA' && chapter === 23) || (bookId === 'JHN' && chapter === 1)) {
         const offlineSet = OFFLINE_COLLECTION[translation]?.[chapter];
         if (offlineSet) {
@@ -638,7 +594,18 @@ export default function App() {
 
       // 3. Dynamic API Loading since not pre-bundled or cached yet
       try {
-        const url = `/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+        const isClientOnlyHost = typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          window.location.hostname !== '127.0.0.1' && 
+          !window.location.hostname.includes('ais-dev-') && 
+          !window.location.hostname.includes('ais-pre-') && 
+          !window.location.hostname.includes('run.app');
+
+        const apiBase = isClientOnlyHost 
+          ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
+          : '';
+
+        const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -893,6 +860,13 @@ export default function App() {
     const bookId = pickedBook.id;
 
     // Check preloaded first
+    const offlineVerses = getOfflineVerses(translation, bookId, chapterNum, isOfflineMode);
+    if (offlineVerses && offlineVerses.length > 0) {
+      setAvailableVerses(offlineVerses.length);
+      setLoadingVersesCount(false);
+      return;
+    }
+
     if ((bookId === 'PSA' && chapterNum === 23) || (bookId === 'JHN' && chapterNum === 1)) {
       const offlineSet = OFFLINE_COLLECTION[translation]?.[chapterNum];
       if (offlineSet) {
@@ -1164,68 +1138,6 @@ export default function App() {
       {/* --- MAIN PAGE VIEWPORT CONTAINER --- */}
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 my-6 md:my-10 relative">
 
-        {/* --- INTERACTIVE DAILY READING PLAN PROGRESS TRACKER --- */}
-        {!settings.zenMode && (
-          <ReadingPlansTracker
-            activeProgress={readingPlanProgress}
-            onSelectBook={setSelectedBook}
-            onSelectChapter={setSelectedChapter}
-            onUpdateProgress={setReadingPlanProgress}
-          />
-        )}
-
-        {/* --- GLOBAL BIBLE READING PROGRESS DASHBOARD --- */}
-        {!settings.zenMode && (
-          <BibleProgressDashboard
-            completedChapters={completedChapters}
-            onSelectBook={setSelectedBook}
-            onSelectChapter={setSelectedChapter}
-            readingStreak={readingStreak}
-            onResetProgress={() => setCompletedChapters([])}
-          />
-        )}
-
-        {/* --- DAILY DEVOTIONAL / ENCOURAGEMENT CARD (Hidden in Zen Mode) --- */}
-        {!settings.zenMode && selectedChapter === 1 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-5.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-1.5 mb-3 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-wide uppercase font-mono">
-              <Sparkles className="w-4 h-4" />
-              Verse of the Day
-            </div>
-            
-            <p className="font-serif italic text-base md:text-lg text-zinc-900 dark:text-zinc-105 leading-relaxed mb-4">
-              “{DAILY_WORDS_OF_ENCOURAGEMENT[dailyVerseIndex].text}”
-            </p>
-
-            <div className="flex items-center justify-between pointer bg-zinc-50 dark:bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-850">
-              <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 font-sans">
-                {DAILY_WORDS_OF_ENCOURAGEMENT[dailyVerseIndex].reference} (WEB)
-              </div>
-              <button 
-                onClick={() => {
-                  // Direct navigation callback
-                  const item = DAILY_WORDS_OF_ENCOURAGEMENT[dailyVerseIndex];
-                  const [bookPart, refPart] = item.reference.split(' ');
-                  const [chapPart, versePart] = refPart.split(':');
-                  const bookMeta = BIBLE_BOOKS.find(b => b.name.toLowerCase().startsWith(bookPart.toLowerCase().substring(0, 3)));
-                  if (bookMeta) {
-                    setSelectedBook(bookMeta);
-                    setSelectedChapter(parseInt(chapPart));
-                  }
-                }}
-                className="py-1 px-3 text-[10px] font-bold text-amber-600 hover:text-amber-500 dark:text-amber-400 uppercase tracking-widest font-mono"
-              >
-                Read Chapter →
-              </button>
-            </div>
-          </motion.div>
-        )}
-
         {/* --- DYNAMIC MAIN READER GLASSES CANVAS --- */}
         <div className={`rounded-3xl p-6 sm:p-9 md:p-11 shadow-lg transition-colors border ${getThemeContainerClass()} ${
           settings.zenMode ? 'my-2 md:my-6 rounded-2xl' : ''
@@ -1256,6 +1168,13 @@ export default function App() {
               </button>
             )}
           </div>
+
+          {translationNotice && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-current text-xs flex items-center gap-2.5">
+              <AlertCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0 select-none animate-bounce" />
+              <span>{translationNotice}</span>
+            </div>
+          )}
 
           {/* Local filter Search in chapter (only if not Zen mode) */}
           {!settings.zenMode && verses.length > 0 && (
@@ -1838,55 +1757,6 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* --- CHAPTER COMPLETION INDICATOR BAR --- */}
-          {!loading && !errorStatus && !settings.zenMode && (
-            <div className="mt-8 pt-4.5 border-t border-dashed border-current/10">
-              <button
-                onClick={() => {
-                  const chapKey = `${selectedBook.id}_${selectedChapter}`;
-                  if (completedChapters.includes(chapKey)) {
-                    setCompletedChapters(completedChapters.filter(k => k !== chapKey));
-                  } else {
-                    setCompletedChapters([...completedChapters, chapKey]);
-                    recordStreakActivity();
-                  }
-                }}
-                className={`w-full py-4 px-5 rounded-2xl border transition flex flex-col sm:flex-row items-center justify-between gap-3 font-sans text-left cursor-pointer ${
-                  completedChapters.includes(`${selectedBook.id}_${selectedChapter}`)
-                    ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-550/30 text-emerald-850 dark:text-emerald-450 hover:bg-emerald-500/20'
-                    : 'bg-current/5 hover:bg-current/10 border-current/10 text-current'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {completedChapters.includes(`${selectedBook.id}_${selectedChapter}`) ? (
-                    <div className="w-5.5 h-5.5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-white dark:text-zinc-950 fill-none" />
-                    </div>
-                  ) : (
-                    <div className="w-5.5 h-5.5 rounded-full border border-current/35 flex items-center justify-center shrink-0 text-[10px] font-black" />
-                  )}
-                  <div>
-                    <h4 className="text-xs font-bold leading-tight">
-                      {completedChapters.includes(`${selectedBook.id}_${selectedChapter}`)
-                        ? `You finished reading ${selectedBook.name} ${selectedChapter}!`
-                        : `Finished reading ${selectedBook.name} ${selectedChapter}?`
-                      }
-                    </h4>
-                    <p className="text-[10px] opacity-65 leading-none mt-1">
-                      {completedChapters.includes(`${selectedBook.id}_${selectedChapter}`)
-                        ? 'Great job keeping up your daily studies! Click to undo.'
-                        : 'Record this chapter to increase your overall Bible progress.'
-                      }
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 text-[10px] font-mono font-black uppercase tracking-wider bg-current/10 px-3 py-1 rounded-full text-center">
-                  {completedChapters.includes(`${selectedBook.id}_${selectedChapter}`) ? 'Completed ✓' : 'Mark as Read'}
-                </div>
-              </button>
             </div>
           )}
 

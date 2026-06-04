@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Type, Moon, Sun, Minimize2, Sparkles, Sliders } from 'lucide-react';
+import { Type, Moon, Sun, Minimize2, Sparkles, Sliders, Key } from 'lucide-react';
 import { ReaderSettings } from '../types';
 
 interface ThemeSelectorProps {
@@ -18,7 +18,7 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
   if (!isOpen) return null;
 
   return (
-    <div id="theme-configuration-popup" className="absolute right-0 top-12 z-40 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4.5 shadow-xl font-sans text-sm animate-fade-in">
+    <div id="theme-configuration-popup" className="absolute right-0 top-12 z-40 w-72 max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4.5 shadow-xl font-sans text-sm animate-fade-in scrollbar-thin">
       <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-3.5">
         <span className="font-sans font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
           <Sliders className="w-4 h-4 text-amber-500" />
@@ -135,7 +135,7 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       </div>
 
       {/* Line spacing adjustments */}
-      <div className="mb-2">
+      <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-1.5">
           Line Spacing
         </label>
@@ -152,6 +152,25 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Optional Client-side Gemini API Key Section for Netlify/External deployments */}
+      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-2">
+        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1 mb-1.5">
+          <Key className="w-3.5 h-3.5 text-amber-500" />
+          Gemini API Key (Optional / Netlify)
+        </label>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2 leading-normal">
+          Provide your own key to run beautiful Yoruba, Swahili, and other AI translations directly in-browser on Netlify!
+        </p>
+        <input
+          type="password"
+          id="client-gemini-api-key-input"
+          placeholder="AIzaSy..."
+          value={settings.geminiApiKey || ''}
+          onChange={(e) => onUpdateSettings({ geminiApiKey: e.target.value })}
+          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus:border-amber-500 dark:focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none placeholder-zinc-400 dark:placeholder-zinc-500 transition font-mono"
+        />
       </div>
     </div>
   );

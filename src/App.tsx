@@ -27,7 +27,8 @@ import {
   AlertCircle,
   Columns,
   Layers,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Key
 } from 'lucide-react';
 import { BIBLE_BOOKS, getBookById } from './bibleStructure';
 import { OFFLINE_COLLECTION, GENESIS_1_FALLBACK, DAILY_WORDS_OF_ENCOURAGEMENT } from './bibleData';
@@ -70,6 +71,109 @@ const TRANSLATIONS = [
   { id: 'sna', name: 'Bhaibheri (Shona)', short: 'SNA' },
   { id: 'amh', name: 'መጽሐፍ ቅዱስ (Amharic)', short: 'AMH' }
 ];
+
+async function translateVersesClientSide(
+  apiKey: string,
+  translation: string,
+  bookId: string,
+  bookName: string,
+  chapter: number,
+  englishVerses: any[]
+): Promise<any[]> {
+  const dynamicLangs: { [key: string]: { name: string; native: string } } = {
+    lsg: { name: 'French (Louis Segond)', native: 'Louis Segond' },
+    yor: { name: 'Yoruba', native: 'Bibeli Mimọ' },
+    ibo: { name: 'Igbo', native: 'Biblia Nso' },
+    hau: { name: 'Hausa', native: 'Littafi Mai Tsarki' },
+    pcm: { name: 'Nigerian Pidgin', native: 'Pidgin Bible' },
+    ije: { name: 'Ijebu (Yoruba dialect)', native: 'Bíbélì Mímọ́ l’édè Ìjẹ̀bú' },
+    tiv: { name: 'Tiv', native: 'Bibilo kachizha' },
+    urh: { name: 'Urhobo', native: 'Obe Rere' },
+    efi: { name: 'Efik / Ibibio', native: 'Edisana Ñwed Abasi' },
+    edo: { name: 'Edo / Benin', native: 'Ebe Nọhuanrẹn l’ede Edo' },
+    ijw: { name: 'Ijaw', native: 'Ebi Eni l’ede Ijaw' },
+    igl: { name: 'Igala', native: 'Abakwane l’ede Igala' },
+    ewe: { name: 'Ewe', native: 'Biblia' },
+    twi: { name: 'Twi', native: 'Twere Kronkron' },
+    swa: { name: 'Swahili', native: 'Biblia Takatifu' },
+    zul: { name: 'Zulu', native: 'IBhayibheli Elingcwele' },
+    xho: { name: 'Xhosa', native: 'IBhayibhile' },
+    sna: { name: 'Shona', native: 'Bhaibheri' },
+    amh: { name: 'Amharic', native: 'መጽሐፍ ቅዱስ' },
+  };
+
+  const langDetail = dynamicLangs[translation];
+  if (!langDetail) {
+    return englishVerses;
+  }
+
+  const versesList = englishVerses
+    .map((v: any) => `[Verse ${v.verse}] ${v.text}`)
+    .join('\n');
+
+  const prompt = `You are an expert translator specializing in translating holy scriptures into different world languages.
+Translate the following English Bible verses (from the World English Bible version) into accurate, beautiful, and theologically clean ${langDetail.name} (${langDetail.native}) translation.
+
+Maintain the exact original verse numbers and formatting.
+Render complete verses—do not skip, abbreviate, or merge any verses.
+Ensure the translation sounds natural, poetic, elegant, and respectful to a native speaker, using standard conventions of the ${langDetail.name} version where applicable.
+
+Provide your output ONLY as a raw JSON array of objects, with no external markdown annotations, conversational text, or wrapper.
+The JSON array must be structured exactly like this:
+[
+  { "verse": 1, "text": "..." },
+  { "verse": 2, "text": "..." }
+]
+
+Input Verses:
+${versesList}`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini client translation request failed with status ${response.status}`);
+  }
+
+  const resJson = await response.json();
+  const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
+  const translatedArray = JSON.parse(replyText);
+
+  return englishVerses.map((orig: any) => {
+    const translationMatch = Array.isArray(translatedArray)
+      ? translatedArray.find((item: any) => Number(item.verse) === orig.verse)
+      : null;
+
+    return {
+      book_id: bookId,
+      book_name: bookName,
+      chapter: chapter,
+      verse: orig.verse,
+      text: translationMatch ? translationMatch.text : orig.text,
+    };
+  });
+}
 
 export default function App() {
   // --- Lazy state initializations ---
@@ -382,53 +486,83 @@ export default function App() {
 
       // 4. Dynamic API Loading since not pre-bundled or cached yet
       try {
-        const isClientOnlyHost = typeof window !== 'undefined' && 
-          window.location.hostname !== 'localhost' && 
-          window.location.hostname !== '127.0.0.1' && 
-          !window.location.hostname.includes('ais-dev-') && 
-          !window.location.hostname.includes('ais-pre-') && 
-          !window.location.hostname.includes('run.app');
-
-        // Target the live production backend if host is client-only (Netlify/Android) & language needs AI translations
-        const apiBase = isClientOnlyHost 
-          ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
-          : '';
-
-        const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
-        let response = await fetch(url);
-        
         let payload: any = null;
-        let isResponseHtmlJsonFallback = false;
+        const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
 
-        // On Netlify/static hosting, missing routes fallback to serving index.html with a 200 OK
-        if (response.ok) {
-          const contentType = response.headers.get('content-type') || '';
-          if (contentType.includes('text/html')) {
-            isResponseHtmlJsonFallback = true;
-          } else {
-            payload = await response.json();
+        // Check if there is a client-side API key and dynamic translation is needed
+        if (settings.geminiApiKey && !standardTranslations.includes(translation)) {
+          try {
+            const webUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
+            const webResponse = await fetch(webUrl);
+            if (webResponse.ok) {
+              const webData = await webResponse.json();
+              if (webData && webData.verses && webData.verses.length > 0) {
+                const clientTranslatedVerses = await translateVersesClientSide(
+                  settings.geminiApiKey,
+                  translation,
+                  bookId,
+                  bookName,
+                  chapter,
+                  webData.verses
+                );
+                if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
+                  payload = { verses: clientTranslatedVerses };
+                }
+              }
+            }
+          } catch (clientErr) {
+            console.error("In-browser client translation failed", clientErr);
           }
         }
 
-        // If the backend was not found, or returned HTML (Netlify SPA fallback mechanism)
-        if (!response.ok || isResponseHtmlJsonFallback) {
-          // If we are looking for a standard translation, we can load it directly from the public bible-api.com CORS API!
-          const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
-          if (standardTranslations.includes(translation)) {
-            const directUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${translation}`;
-            const directResponse = await fetch(directUrl);
-            if (directResponse.ok) {
-              const directPayload = await directResponse.json();
-              if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
-                payload = {
-                  verses: directPayload.verses.map((v: any) => ({
-                    book_id: bookId,
-                    book_name: bookName,
-                    chapter: chapter,
-                    verse: v.verse,
-                    text: v.text
-                  }))
-                };
+        // If client translation didn't run or didn't produce verses, use standard fetch endpoint
+        if (!payload) {
+          const isClientOnlyHost = typeof window !== 'undefined' && 
+            window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1' && 
+            !window.location.hostname.includes('ais-dev-') && 
+            !window.location.hostname.includes('ais-pre-') && 
+            !window.location.hostname.includes('run.app');
+
+          // Target the live production backend if host is client-only (Netlify/Android) & language needs AI translations
+          const apiBase = isClientOnlyHost 
+            ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
+            : '';
+
+          const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+          let response = await fetch(url);
+          
+          let isResponseHtmlJsonFallback = false;
+
+          // On Netlify/static hosting, missing routes fallback to serving index.html with a 200 OK
+          if (response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('text/html')) {
+              isResponseHtmlJsonFallback = true;
+            } else {
+              payload = await response.json();
+            }
+          }
+
+          // If the backend was not found, or returned HTML (Netlify SPA fallback mechanism)
+          if (!response.ok || isResponseHtmlJsonFallback) {
+            // If we are looking for a standard translation, we can load it directly from the public bible-api.com CORS API!
+            if (standardTranslations.includes(translation)) {
+              const directUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${translation}`;
+              const directResponse = await fetch(directUrl);
+              if (directResponse.ok) {
+                const directPayload = await directResponse.json();
+                if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
+                  payload = {
+                    verses: directPayload.verses.map((v: any) => ({
+                      book_id: bookId,
+                      book_name: bookName,
+                      chapter: chapter,
+                      verse: v.verse,
+                      text: v.text
+                    }))
+                  };
+                }
               }
             }
           }
@@ -594,25 +728,57 @@ export default function App() {
 
       // 3. Dynamic API Loading since not pre-bundled or cached yet
       try {
-        const isClientOnlyHost = typeof window !== 'undefined' && 
-          window.location.hostname !== 'localhost' && 
-          window.location.hostname !== '127.0.0.1' && 
-          !window.location.hostname.includes('ais-dev-') && 
-          !window.location.hostname.includes('ais-pre-') && 
-          !window.location.hostname.includes('run.app');
+        let payload: any = null;
+        const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
 
-        const apiBase = isClientOnlyHost 
-          ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
-          : '';
-
-        const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error('Comparison version chapter not available or failed to load.');
+        // Check if there is a client-side API key and dynamic translation is needed
+        if (settings.geminiApiKey && !standardTranslations.includes(translation)) {
+          try {
+            const webUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
+            const webResponse = await fetch(webUrl);
+            if (webResponse.ok) {
+              const webData = await webResponse.json();
+              if (webData && webData.verses && webData.verses.length > 0) {
+                const clientTranslatedVerses = await translateVersesClientSide(
+                  settings.geminiApiKey,
+                  translation,
+                  bookId,
+                  bookName,
+                  chapter,
+                  webData.verses
+                );
+                if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
+                  payload = { verses: clientTranslatedVerses };
+                }
+              }
+            }
+          } catch (clientErr) {
+            console.error("In-browser client comparison translation failed", clientErr);
+          }
         }
-        
-        const payload = await response.json();
+
+        // If client translation didn't run or didn't produce verses, use standard fetch endpoint
+        if (!payload) {
+          const isClientOnlyHost = typeof window !== 'undefined' && 
+            window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1' && 
+            !window.location.hostname.includes('ais-dev-') && 
+            !window.location.hostname.includes('ais-pre-') && 
+            !window.location.hostname.includes('run.app');
+
+          const apiBase = isClientOnlyHost 
+            ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
+            : '';
+
+          const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error('Comparison version chapter not available or failed to load.');
+          }
+          
+          payload = await response.json();
+        }
         
         if (payload && payload.verses && payload.verses.length > 0) {
           // Cache permanently in localStorage for premium offline-first operations future load!
@@ -621,7 +787,7 @@ export default function App() {
             setCompareVerses(payload.verses);
           }
         } else {
-          throw new Error(payload.error || 'Format unknown');
+          throw new Error(payload?.error || 'Format unknown');
         }
       } catch (err: any) {
         console.warn("Compare API loading issue. Offline fallback triggered.", err);
@@ -1170,9 +1336,27 @@ export default function App() {
           </div>
 
           {translationNotice && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-current text-xs flex items-center gap-2.5">
-              <AlertCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0 select-none animate-bounce" />
-              <span>{translationNotice}</span>
+            <div className="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-current text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <AlertCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0 select-none animate-pulse" />
+                <span className="leading-relaxed">{translationNotice}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowSettings(true);
+                  setTimeout(() => {
+                    const input = document.getElementById('client-gemini-api-key-input');
+                    if (input) {
+                      input.focus();
+                      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }, 150);
+                }}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium text-[11px] transition-all flex items-center gap-1.5 shadow-sm active:scale-95 self-end sm:self-auto cursor-pointer"
+              >
+                <Key className="w-3.5 h-3.5" />
+                Setup Key
+              </button>
             </div>
           )}
 

@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   android: {
     buildOptions: {
       keystorePath: 'release.keystore',
-      keystoreAlias: 'wordupAfrica',
+      keystoreAlias: 'my-key-alias',
     },
   },
   plugins: {

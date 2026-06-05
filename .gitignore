@@ -13,3 +13,4 @@ android/app/build/
 android/build/
 *.keystore
 *.jks
+android/keystore.properties

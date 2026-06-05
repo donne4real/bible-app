@@ -31,19 +31,19 @@ import LanguagesGuideModal from './components/LanguagesGuideModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TRANSLATIONS = [
-  { id: 'web', name: 'World English Bible (WEB)',        short: 'WEB' },
-  { id: 'kjv', name: 'King James Version (KJV)',          short: 'KJV' },
-  { id: 'lsg', name: 'Louis Segond 1910 (French)',        short: 'LSG' },
-  { id: 'yor', name: 'Bibeli Mimo (Yoruba)',               short: 'YOR' },
-  { id: 'ibo', name: 'Biblia Nso (Igbo)',                  short: 'IBO' },
-  { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)',        short: 'HAU' },
-  { id: 'twi', name: 'Twi Asante Bible',                   short: 'TWI' },
-  { id: 'pcm', name: 'Nigerian Pidgin Bible',              short: 'PCM' },
-  { id: 'afr', name: 'Afrikaans Ou Vertaling',             short: 'AFR' },
-  { id: 'amh', name: 'Amharic Bible (NT)',                 short: 'AMH' },
-  { id: 'swa', name: 'Swahili Bible (NT)',                 short: 'SWA' },
-  { id: 'sna', name: 'Shona Bible (NT)',                   short: 'SNA' },
-  { id: 'nde', name: 'Ndebele Bible',                      short: 'NDE' },
+  { id: 'web', name: 'World English Bible (WEB)',        short: 'WEB', ntOnly: false },
+  { id: 'kjv', name: 'King James Version (KJV)',          short: 'KJV', ntOnly: false },
+  { id: 'lsg', name: 'Louis Segond 1910 (French)',        short: 'LSG', ntOnly: false },
+  { id: 'yor', name: 'Bibeli Mimo (Yoruba)',               short: 'YOR', ntOnly: false },
+  { id: 'ibo', name: 'Biblia Nso (Igbo)',                  short: 'IBO', ntOnly: false },
+  { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)',        short: 'HAU', ntOnly: false },
+  { id: 'twi', name: 'Twi Asante Bible',                   short: 'TWI', ntOnly: false },
+  { id: 'pcm', name: 'Nigerian Pidgin Bible',              short: 'PCM', ntOnly: false },
+  { id: 'afr', name: 'Afrikaans Ou Vertaling',             short: 'AFR', ntOnly: false },
+  { id: 'nde', name: 'Ndebele Bible',                      short: 'NDE', ntOnly: false },
+  { id: 'amh', name: 'Amharic Bible',                     short: 'AMH', ntOnly: false },
+  { id: 'swa', name: 'Swahili Bible',                     short: 'SWA', ntOnly: false },
+  { id: 'sna', name: 'Shona Bible',                       short: 'SNA', ntOnly: true  },
 ];
 
 export default function App() {
@@ -413,6 +413,53 @@ export default function App() {
     switch (settings.theme) { case 'light': return 'bg-zinc-100 min-h-screen'; case 'dark': return 'bg-zinc-950 min-h-screen'; case 'charcoal': return 'bg-[#000000] min-h-screen'; default: return 'bg-[#EADFCA] min-h-screen'; }
   };
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
+  const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
+
+  function ErrorState() {
+    if (isNtOnlyError) {
+      return (
+        <div className="text-center py-10">
+          <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3.5" />
+          <p className="text-sm font-semibold mb-2">{activeTrans?.name} is a New Testament translation</p>
+          <p className="text-xs opacity-70 max-w-sm mx-auto mb-2 leading-relaxed">
+            <strong>{selectedBook.name}</strong> is an Old Testament book and is not available in this
+            translation. Navigate to Matthew or later to read in {activeTrans?.short}.
+          </p>
+          <p className="text-xs opacity-50 max-w-sm mx-auto mb-6">
+            For the full Old Testament, switch to WEB, KJV, or another complete translation.
+          </p>
+          <div className="flex flex-col gap-2 max-w-xs mx-auto">
+            <button
+              onClick={() => { setSelectedBook(BIBLE_BOOKS.find(b => b.id === 'MAT')!); setSelectedChapter(1); }}
+              className="py-2.5 px-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer text-amber-700 dark:text-amber-400"
+            >
+              Jump to Matthew 1 ({activeTrans?.short})
+            </button>
+            <button
+              onClick={() => handleUpdateSettings({ translation: 'web' })}
+              className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer"
+            >
+              Switch to WEB (Full Bible)
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="text-center py-10">
+        <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3.5" />
+        <p className="text-sm font-semibold mb-2">{errorStatus}</p>
+        <p className="text-xs opacity-60 max-w-sm mx-auto mb-6">Try a different translation using the selector above.</p>
+        <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+          <button onClick={() => handleUpdateSettings({ translation: 'web' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to WEB</button>
+          <button onClick={() => handleUpdateSettings({ translation: 'kjv' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to KJV</button>
+        </div>
+      </div>
+    );
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className={`transition-colors duration-200 ${getThemeOuterClass()} flex flex-col font-sans select-none relative overflow-x-hidden`}>
@@ -464,7 +511,7 @@ export default function App() {
                   >
                     {TRANSLATIONS.map(t => (
                       <option key={t.id} value={t.id} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">
-                        {t.short}
+                        {t.short}{t.ntOnly ? ' (NT)' : ''}
                       </option>
                     ))}
                   </select>
@@ -528,9 +575,16 @@ export default function App() {
           {/* Chapter header */}
           <div className="flex items-center justify-between pb-4 border-b border-current/15 mb-6">
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60 font-mono">
-                {TRANSLATIONS.find(t => t.id === settings.translation)?.name}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold tracking-widest opacity-60 font-mono">
+                  {TRANSLATIONS.find(t => t.id === settings.translation)?.name}
+                </span>
+                {TRANSLATIONS.find(t => t.id === settings.translation)?.ntOnly && (
+                  <span className="text-[9px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 select-none">
+                    New Testament Only
+                  </span>
+                )}
+              </div>
               <h2 className="text-2xl md:text-3xl font-serif font-bold tracking-tight">
                 {selectedBook.name} {selectedChapter}
               </h2>
@@ -637,23 +691,7 @@ export default function App() {
           )}
 
           {/* Error state */}
-          {!loading && errorStatus && (
-            <div className="text-center py-10">
-              <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3.5" />
-              <p className="text-sm font-semibold mb-2">{errorStatus}</p>
-              <p className="text-xs opacity-60 max-w-sm mx-auto mb-6">
-                Try a different translation using the selector above.
-              </p>
-              <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-                <button onClick={() => handleUpdateSettings({ translation: 'web' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">
-                  Switch to WEB
-                </button>
-                <button onClick={() => handleUpdateSettings({ translation: 'kjv' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">
-                  Switch to KJV
-                </button>
-              </div>
-            </div>
-          )}
+          {!loading && errorStatus && <ErrorState />}
 
           {/* Verse content */}
           {!loading && !errorStatus && (

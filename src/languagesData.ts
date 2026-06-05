@@ -148,7 +148,7 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
   {
     id: 'amh',
     short: 'AMH',
-    name: 'Amharic (New Testament)',
+    name: 'Amharic',
     nativeName: 'መጽሐፍ ቅዱስ',
     translationName: 'Amharic Bible (AMH)',
     abbreviationExplanation: 'AMH — Amharic, written in the ancient Ge\'ez (Fidel) script',
@@ -162,7 +162,7 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
   {
     id: 'swa',
     short: 'SWA',
-    name: 'Swahili / Kiswahili (New Testament)',
+    name: 'Swahili / Kiswahili',
     nativeName: 'Biblia Takatifu',
     translationName: 'Swahili Bible (SWA)',
     abbreviationExplanation: 'SWA — Kiswahili, the lingua franca of East Africa',
@@ -176,7 +176,7 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
   {
     id: 'sna',
     short: 'SNA',
-    name: 'Shona (New Testament)',
+    name: 'Shona (New Testament only)',
     nativeName: 'Bhaibheri',
     translationName: 'Shona Bible (SNA)',
     abbreviationExplanation: 'SNA — chiShona, principal language of Zimbabwe',

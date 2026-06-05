@@ -202,6 +202,12 @@ const TRANSLATIONS = [
   { appId: 'hau', source: 'ebible',   id: 'hausa',       name: 'Hausa Bible' },
   { appId: 'twi', source: 'ebible',   id: 'twiasante',   name: 'Twi / Akan Asante Bible' },
   { appId: 'pcm', source: 'ebible',   id: 'pcm',         name: 'Nigerian Pidgin Bible' },
+  // New additions
+  { appId: 'afr', source: 'getbible', id: 'aov',        name: 'Afrikaans Ou Vertaling' },
+  { appId: 'amh', source: 'ebible',   id: 'amh',        name: 'Amharic Bible' },
+  { appId: 'swa', source: 'getbible', id: 'swahili',    name: 'Swahili Bible (NT)' },
+  { appId: 'sna', source: 'getbible', id: 'shona',      name: 'Shona Bible (NT)' },
+  { appId: 'nde', source: 'getbible', id: 'ndebele',    name: 'Ndebele Bible' },
 ];
 
 async function main() {

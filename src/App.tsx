@@ -31,14 +31,19 @@ import LanguagesGuideModal from './components/LanguagesGuideModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TRANSLATIONS = [
-  { id: 'web', name: 'World English Bible (WEB)',    short: 'WEB' },
-  { id: 'kjv', name: 'King James Version (KJV)',      short: 'KJV' },
-  { id: 'lsg', name: 'Louis Segond 1910 (French)',    short: 'LSG' },
-  { id: 'yor', name: 'Bibeli Mimo (Yoruba)',           short: 'YOR' },
-  { id: 'ibo', name: 'Biblia Nso (Igbo)',              short: 'IBO' },
-  { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)',    short: 'HAU' },
-  { id: 'twi', name: 'Twi Asante Bible',               short: 'TWI' },
-  { id: 'pcm', name: 'Nigerian Pidgin Bible',          short: 'PCM' },
+  { id: 'web', name: 'World English Bible (WEB)',        short: 'WEB' },
+  { id: 'kjv', name: 'King James Version (KJV)',          short: 'KJV' },
+  { id: 'lsg', name: 'Louis Segond 1910 (French)',        short: 'LSG' },
+  { id: 'yor', name: 'Bibeli Mimo (Yoruba)',               short: 'YOR' },
+  { id: 'ibo', name: 'Biblia Nso (Igbo)',                  short: 'IBO' },
+  { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)',        short: 'HAU' },
+  { id: 'twi', name: 'Twi Asante Bible',                   short: 'TWI' },
+  { id: 'pcm', name: 'Nigerian Pidgin Bible',              short: 'PCM' },
+  { id: 'afr', name: 'Afrikaans Ou Vertaling',             short: 'AFR' },
+  { id: 'amh', name: 'Amharic Bible (NT)',                 short: 'AMH' },
+  { id: 'swa', name: 'Swahili Bible (NT)',                 short: 'SWA' },
+  { id: 'sna', name: 'Shona Bible (NT)',                   short: 'SNA' },
+  { id: 'nde', name: 'Ndebele Bible',                      short: 'NDE' },
 ];
 
 export default function App() {

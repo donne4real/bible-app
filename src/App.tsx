@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Book,
   Menu,
@@ -164,7 +164,14 @@ export default function App() {
           setVerses([]);
           setErrorStatus(`${selectedBook.name} ${selectedChapter} is not available in the ${TRANSLATIONS.find(t => t.id === settings.translation)?.short || settings.translation.toUpperCase()} translation.`);
         }
-        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setVerses([]);
+        setErrorStatus('Could not load this chapter. Please check your connection and try again.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
 
     return () => { active = false; };
@@ -182,7 +189,12 @@ export default function App() {
         if (!active) return;
         if (result && result.length > 0) setCompareVerses(result);
         else setCompareError('Not available in this translation.');
-        setCompareLoading(false);
+      })
+      .catch(() => {
+        if (active) setCompareError('Could not load comparison translation.');
+      })
+      .finally(() => {
+        if (active) setCompareLoading(false);
       });
 
     return () => { active = false; };
@@ -199,6 +211,25 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // ── Navigation helpers ──────────────────────────────────────────────────────
+  const handlePrevChapter = useCallback(() => {
+    if (selectedChapter > 1) {
+      setSelectedChapter(selectedChapter - 1);
+    } else {
+      const idx = BIBLE_BOOKS.findIndex(b => b.id === selectedBook.id);
+      if (idx > 0) { const prev = BIBLE_BOOKS[idx - 1]; setSelectedBook(prev); setSelectedChapter(prev.chapters); }
+    }
+  }, [selectedBook, selectedChapter]);
+
+  const handleNextChapter = useCallback(() => {
+    if (selectedChapter < selectedBook.chapters) {
+      setSelectedChapter(selectedChapter + 1);
+    } else {
+      const idx = BIBLE_BOOKS.findIndex(b => b.id === selectedBook.id);
+      if (idx < BIBLE_BOOKS.length - 1) { const next = BIBLE_BOOKS[idx + 1]; setSelectedBook(next); setSelectedChapter(1); }
+    }
+  }, [selectedBook, selectedChapter]);
+
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -209,26 +240,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedBook, selectedChapter]);
-
-  // ── Navigation helpers ──────────────────────────────────────────────────────
-  const handlePrevChapter = () => {
-    if (selectedChapter > 1) {
-      setSelectedChapter(selectedChapter - 1);
-    } else {
-      const idx = BIBLE_BOOKS.findIndex(b => b.id === selectedBook.id);
-      if (idx > 0) { const prev = BIBLE_BOOKS[idx - 1]; setSelectedBook(prev); setSelectedChapter(prev.chapters); }
-    }
-  };
-
-  const handleNextChapter = () => {
-    if (selectedChapter < selectedBook.chapters) {
-      setSelectedChapter(selectedChapter + 1);
-    } else {
-      const idx = BIBLE_BOOKS.findIndex(b => b.id === selectedBook.id);
-      if (idx < BIBLE_BOOKS.length - 1) { const next = BIBLE_BOOKS[idx + 1]; setSelectedBook(next); setSelectedChapter(1); }
-    }
-  };
+  }, [handlePrevChapter, handleNextChapter]);
 
   const handleNavigateSidebar = (bookId: string, chapter: number, verse?: number) => {
     const book = BIBLE_BOOKS.find(b => b.id === bookId);
@@ -253,12 +265,17 @@ export default function App() {
 
   const handleSelectChapterFromMenu = async (chapterNum: number) => {
     if (!pickedBook) return;
+    const snapshotBook = pickedBook; // capture before any state update
     setPickedChapter(chapterNum);
     setShowChapterPicker(false);
     setShowVersePicker(true);
-    // Determine verse count from cached data
-    const result = await getVerses(settings.translation, pickedBook.id, pickedBook.name, chapterNum);
-    setAvailableVerses(result ? result.length : 30);
+    // Determine verse count; guard against rapid chapter clicks racing
+    const result = await getVerses(settings.translation, snapshotBook.id, snapshotBook.name, chapterNum);
+    // Only apply if the picker hasn't moved on to a different chapter
+    setPickedChapter(prev => {
+      if (prev === chapterNum) setAvailableVerses(result ? result.length : 30);
+      return prev;
+    });
   };
 
   const handleSelectVerseFromMenu = (verseNum: number) => {
@@ -809,6 +826,7 @@ export default function App() {
             onClose={() => setShowLanguagesList(false)}
             activeTranslation={settings.translation}
             onSelectTranslation={id => handleUpdateSettings({ translation: id })}
+            availableIds={TRANSLATIONS.map(t => t.id)}
           />
         )}
       </AnimatePresence>

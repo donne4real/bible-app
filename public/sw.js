@@ -63,7 +63,10 @@ self.addEventListener('fetch', event => {
 
         return response;
       }).catch(() => {
+        // For page navigations fall back to the app shell
         if (event.request.mode === 'navigate') return caches.match('/index.html');
+        // For all other requests (JS chunks, Bible JSON, fonts) try the cache
+        return caches.match(event.request);
       });
     })
   );

@@ -23,13 +23,15 @@ interface LanguagesGuideModalProps {
   onClose: () => void;
   activeTranslation: string;
   onSelectTranslation: (id: string) => void;
+  availableIds?: string[];
 }
 
 export default function LanguagesGuideModal({
   isOpen,
   onClose,
   activeTranslation,
-  onSelectTranslation
+  onSelectTranslation,
+  availableIds,
 }: LanguagesGuideModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
@@ -291,16 +293,26 @@ export default function LanguagesGuideModal({
 
                 {/* Action button bar */}
                 <div className="pt-4 border-t border-zinc-150 dark:border-zinc-800 flex gap-2">
-                  <button
-                    onClick={() => {
-                      onSelectTranslation(selectedLanguage.id);
-                      onClose();
-                    }}
-                    className="flex-1 py-3 bg-amber-550 hover:bg-amber-500 font-sans font-bold text-xs text-zinc-950 rounded-2xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98]"
-                  >
-                    <BookMarked className="w-4 h-4" />
-                    Select & Read {selectedLanguage.name} ({selectedLanguage.id.toUpperCase()})
-                  </button>
+                  {(() => {
+                    const isAvailable = !availableIds || availableIds.includes(selectedLanguage.id);
+                    return (
+                      <button
+                        onClick={() => { if (isAvailable) { onSelectTranslation(selectedLanguage.id); onClose(); } }}
+                        disabled={!isAvailable}
+                        className={`flex-1 py-3 font-sans font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] ${
+                          isAvailable
+                            ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950 cursor-pointer'
+                            : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
+                        }`}
+                        title={isAvailable ? undefined : 'This translation is not available in the current build'}
+                      >
+                        <BookMarked className="w-4 h-4" />
+                        {isAvailable
+                          ? `Select & Read ${selectedLanguage.name} (${selectedLanguage.id.toUpperCase()})`
+                          : `${selectedLanguage.name} — Not Available`}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             ) : (

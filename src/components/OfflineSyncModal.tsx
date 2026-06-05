@@ -28,7 +28,6 @@ interface OfflineSyncModalProps {
   currentTranslation: string;
   translationsList: { id: string; name: string; short: string }[];
   currentBookId: string;
-  geminiApiKey?: string;
   onRefreshTrigger?: () => void; // Trigger UI update in primary reader after caching newly fetched chapters
 }
 
@@ -42,111 +41,12 @@ interface CachedBookStats {
   progressPercent: number;
 }
 
-// Client-side translator identical to App.tsx logic
-async function translateVersesClientSide(
-  apiKey: string,
-  translation: string,
-  bookId: string,
-  bookName: string,
-  chapter: number,
-  englishVerses: any[]
-): Promise<any[]> {
-  const dynamicLangs: { [key: string]: { name: string; native: string } } = {
-    lsg: { name: 'French (Louis Segond)', native: 'Louis Segond' },
-    yor: { name: 'Yoruba', native: 'Bibeli Mimọ' },
-    ibo: { name: 'Igbo', native: 'Biblia Nso' },
-    hau: { name: 'Hausa', native: 'Littafi Mai Tsarki' },
-    pcm: { name: 'Nigerian Pidgin', native: 'Pidgin Bible' },
-    ije: { name: 'Ijebu (Yoruba dialect)', native: 'Bíbélì Mímọ́ l’édè Ìjẹ̀bú' },
-    tiv: { name: 'Tiv', native: 'Bibilo kachizha' },
-    urh: { name: 'Urhobo', native: 'Obe Rere' },
-    efi: { name: 'Efik / Ibibio', native: 'Edisana Ñwed Abasi' },
-    edo: { name: 'Edo / Benin', native: 'Ebe Nọhuanrẹn l’ede Edo' },
-    ijw: { name: 'Ijaw', native: 'Ebi Eni l’ede Ijaw' },
-    igl: { name: 'Igala', native: 'Abakwane l’ede Igala' },
-    ewe: { name: 'Ewe', native: 'Biblia' },
-    twi: { name: 'Twi', native: 'Twere Kronkron' },
-    swa: { name: 'Swahili', native: 'Biblia Takatifu' },
-    zul: { name: 'Zulu', native: 'IBhayibheli Elingcwele' },
-    xho: { name: 'Xhosa', native: 'IBhayibhile' },
-    sna: { name: 'Shona', native: 'Bhaibheri' },
-    amh: { name: 'Amharic', native: 'መጽሐፍ ቅዱስ' },
-  };
-
-  const langDetail = dynamicLangs[translation];
-  if (!langDetail) return englishVerses;
-
-  const versesList = englishVerses
-    .map((v: any) => `[Verse ${v.verse}] ${v.text}`)
-    .join('\n');
-
-  const prompt = `You are an expert translator specializing in translating holy scriptures into different world languages.
-Translate the following English Bible verses (from the World English Bible version) into accurate, beautiful, and theologically clean ${langDetail.name} (${langDetail.native}) translation.
-
-Maintain the exact original verse numbers and formatting.
-Render complete verses—do not skip, abbreviate, or merge any verses.
-Ensure the translation sounds natural, poetic, elegant, and respectful to a native speaker.
-
-Provide your output ONLY as a raw JSON array of objects, with no external markdown annotations, conversational text, or wrapper.
-The JSON array must be structured exactly like this:
-[
-  { "verse": 1, "text": "..." },
-  { "verse": 2, "text": "..." }
-]
-
-Input Verses:
-${versesList}`;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Gemini client translation request failed with status ${response.status}`);
-  }
-
-  const resJson = await response.json();
-  const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
-  const translatedArray = JSON.parse(replyText);
-
-  return englishVerses.map((orig: any) => {
-    const translationMatch = Array.isArray(translatedArray)
-      ? translatedArray.find((item: any) => Number(item.verse) === orig.verse)
-      : null;
-
-    return {
-      book_id: bookId,
-      book_name: bookName,
-      chapter: chapter,
-      verse: orig.verse,
-      text: translationMatch ? translationMatch.text : orig.text,
-    };
-  });
-}
-
 export default function OfflineSyncModal({
   isOpen,
   onClose,
   currentTranslation,
   translationsList,
   currentBookId,
-  geminiApiKey,
   onRefreshTrigger
 }: OfflineSyncModalProps) {
   // Connection state
@@ -265,14 +165,9 @@ export default function OfflineSyncModal({
     const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
     const isStandard = standardTranslations.includes(translation);
 
-    // Warning confirmation for entire dynamic AI translation or massive server requests
+    // Warning confirmation for entire Bible download
     if (downloadScope === 'entire') {
-      if (geminiApiKey && !isStandard) {
-        const confirmEntireAI = confirm(
-          `WARNING: Downloading the ENTIRE Bible under ${transObj.name} will attempt to dynamically translate all 1,189 chapters on-demand using your Gemini API key. This will take a long time and could exceed your API quota. We recommend downloading books one-by-one as needed, or downloading standard versions instead.\n\nDo you want to proceed with full AI translation?`
-        );
-        if (!confirmEntireAI) return;
-      } else if (!isStandard) {
+      if (!isStandard) {
         const confirmEntireServer = confirm(
           `Downloading the ENTIRE Bible under ${transObj.name} will stream all 1,189 chapters from the API server. This will make 1,189 API requests. Please ensure you have a stable internet connection.\n\nDo you want to proceed?`
         );
@@ -340,73 +235,32 @@ export default function OfflineSyncModal({
 
       try {
         let payload: any = null;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
 
-        // Fetch using custom client Gemini engine if Key is available
-        if (geminiApiKey && !isStandard) {
-          const webUrl = `https://bible-api.com/${encodeURIComponent(item.bookName)}+${item.chapter}?translation=web`;
-          const webResponse = await fetch(webUrl);
-          if (webResponse.ok) {
-            const webData = await webResponse.json();
-            if (webData && webData.verses && webData.verses.length > 0) {
-              const clientTranslatedVerses = await translateVersesClientSide(
-                geminiApiKey,
-                translation,
-                item.bookId,
-                item.bookName,
-                item.chapter,
-                webData.verses
-              );
-              if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
-                payload = { verses: clientTranslatedVerses };
-              }
+        if (isStandard) {
+          const directUrl = `https://bible-api.com/${encodeURIComponent(item.bookName)}+${item.chapter}?translation=${translation}`;
+          const directResponse = await fetch(directUrl);
+          if (directResponse.ok) {
+            const directPayload = await directResponse.json();
+            if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
+              payload = {
+                verses: directPayload.verses.map((v: any) => ({
+                  book_id: item.bookId,
+                  book_name: item.bookName,
+                  chapter: item.chapter,
+                  verse: v.verse,
+                  text: v.text
+                }))
+              };
             }
           }
-        }
-
-        // If client-side Gemini didn't run, fetch normally
-        if (!payload) {
-          const isClientOnlyHost = typeof window !== 'undefined' && 
-            window.location.hostname !== 'localhost' && 
-            window.location.hostname !== '127.0.0.1' && 
-            !window.location.hostname.includes('ais-dev-') && 
-            !window.location.hostname.includes('ais-pre-') && 
-            !window.location.hostname.includes('run.app');
-
-          const apiBase = isClientOnlyHost 
-            ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
-            : '';
-
+        } else {
           const url = `${apiBase}/api/bible?translation=${translation}&book_id=${item.bookId}&book_name=${encodeURIComponent(item.bookName)}&chapter=${item.chapter}`;
           const response = await fetch(url);
-          
-          let isResponseHtmlJsonFallback = false;
           if (response.ok) {
             const contentType = response.headers.get('content-type') || '';
-            if (contentType.includes('text/html')) {
-              isResponseHtmlJsonFallback = true;
-            } else {
+            if (!contentType.includes('text/html')) {
               payload = await response.json();
-            }
-          }
-
-          if (!response.ok || isResponseHtmlJsonFallback) {
-            if (isStandard) {
-              const directUrl = `https://bible-api.com/${encodeURIComponent(item.bookName)}+${item.chapter}?translation=${translation}`;
-              const directResponse = await fetch(directUrl);
-              if (directResponse.ok) {
-                const directPayload = await directResponse.json();
-                if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
-                  payload = {
-                    verses: directPayload.verses.map((v: any) => ({
-                      book_id: item.bookId,
-                      book_name: item.bookName,
-                      chapter: item.chapter,
-                      verse: v.verse,
-                      text: v.text
-                    }))
-                  };
-                }
-              }
             }
           }
         }
@@ -662,12 +516,12 @@ export default function OfflineSyncModal({
                     </div>
                   )}
 
-                  {/* Warning if AI translation needed but user does not have client API key, though they can still fetch if connected */}
-                  {!geminiApiKey && !['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'].includes(selectedTrans) && (
+                  {/* Note if dynamic AI translation needed */}
+                  {!['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'].includes(selectedTrans) && (
                     <div className="p-2.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-[11px] text-zinc-600 dark:text-zinc-400 flex items-start gap-2">
                       <AlertCircle className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
                       <span>
-                        Note: Downloading <strong>{selectedTransObj?.name}</strong> needs either an active internet connection to retrieve translations from the server, or a Gemini API key. Standard translations like standard KJV or WEB download directly in seconds from the public repository!
+                        Note: Downloading <strong>{selectedTransObj?.name}</strong> requires an active internet connection — translations are generated server-side. Standard translations like KJV or WEB download directly in seconds!
                       </span>
                     </div>
                   )}

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Type, Moon, Sun, Minimize2, Sparkles, Sliders, Key, DatabaseBackup, ChevronRight } from 'lucide-react';
+import { Type, Moon, Sun, Minimize2, Sparkles, Sliders, DatabaseBackup, ChevronRight } from 'lucide-react';
 import { ReaderSettings } from '../types';
 
 interface ThemeSelectorProps {
@@ -82,7 +82,7 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1.5 leading-tight">
           {settings.offlineOnly !== false 
             ? "✓ Runs 100% offline from the local Bible database. No internet data or API keys." 
-            : "⚡ Uses online sources & client-side Gemini translations where available."
+            : "⚡ Uses online sources & server-side AI translations where available."
           }
         </p>
       </div>
@@ -209,26 +209,6 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
         </div>
       </div>
 
-      {/* Optional Client-side Gemini API Key Section for Netlify/External deployments */}
-      {settings.offlineOnly === false && (
-        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-2 animate-fade-in">
-          <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1 mb-1.5">
-            <Key className="w-3.5 h-3.5 text-amber-500" />
-            Gemini API Key (Optional / Netlify)
-          </label>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2 leading-normal">
-            Provide your own key to run beautiful Yoruba, Swahili, and other AI translations directly in-browser on Netlify!
-          </p>
-          <input
-            type="password"
-            id="client-gemini-api-key-input"
-            placeholder="AIzaSy..."
-            value={settings.geminiApiKey || ''}
-            onChange={(e) => onUpdateSettings({ geminiApiKey: e.target.value })}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus:border-amber-500 dark:focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none placeholder-zinc-400 dark:placeholder-zinc-500 transition font-mono"
-          />
-        </div>
-      )}
     </div>
   );
 }

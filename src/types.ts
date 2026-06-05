@@ -12,17 +12,17 @@ export interface Verse {
 }
 
 export interface Highlight {
-  id: string; // unique combo of book_id + chapter + verse + translation
+  id: string;
   book_id: string;
   book_name: string;
   chapter: number;
   verse: number;
-  color: string; // e.g. "yellow" | "green" | "blue" | "pink" | "orange"
+  color: string;
   createdAt: number;
 }
 
 export interface Note {
-  id: string; // combo of book_id + chapter + verse
+  id: string;
   book_id: string;
   book_name: string;
   chapter: number;
@@ -46,18 +46,16 @@ export interface ReaderSettings {
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
   zenMode: boolean;
   theme: 'light' | 'sepia' | 'dark' | 'charcoal';
-  geminiApiKey?: string;
-  offlineOnly?: boolean;
 }
 
 export interface VerseCardStyle {
-  background: string; // linear-gradient or single color or image placeholder background
+  background: string;
   textColor: string;
   fontFamily: 'serif' | 'sans' | 'mono' | 'handwriting';
   fontSize: 'sm' | 'md' | 'lg' | 'xl';
   textAlignment: 'left' | 'center' | 'right';
   cardRatio: 'square' | 'portrait' | 'story';
-  overlayOpacity: number; // 0 to 1
+  overlayOpacity: number;
 }
 
 export interface BookMetadata {

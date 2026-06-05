@@ -1,75 +1,69 @@
-const CACHE_NAME = 'wordup-africa-bible-v2';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'wordup-africa-bible-v3';
+
+// App shell — cached on install
+const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
-  '/icon-maskable.png'
+  '/icon-maskable.png',
 ];
 
-// On installation, cache core app shell assets
-self.addEventListener('install', (event) => {
+// All bundled Bible translation files — pre-cached so the app works
+// 100% offline immediately after the first install completes.
+const BIBLE_FILES = [
+  '/bibles/web.json',
+  '/bibles/kjv.json',
+  '/bibles/lsg.json',
+  '/bibles/yor.json',
+  '/bibles/ibo.json',
+  '/bibles/hau.json',
+  '/bibles/twi.json',
+  '/bibles/pcm.json',
+];
+
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching app shell and core assets');
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => {
+      // Cache shell immediately, then Bible files (large but critical)
+      return cache.addAll(SHELL_ASSETS)
+        .then(() => cache.addAll(BIBLE_FILES))
+        .then(() => self.skipWaiting());
+    })
   );
 });
 
-// Clean up old caches
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log('[Service Worker] Removing old cache', key);
-          return caches.delete(key);
-        }
-      }));
-    }).then(() => self.clients.claim())
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });
 
-// Cache-First with Network-Fallback strategy for asset efficiency
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
+// Cache-first for all GET requests
+self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  const url = new URL(event.request.url);
-
-  // Bypass API routing unless it's a known static cacheable resource
-  if (url.pathname.startsWith('/api/')) {
-    // Let the network fetch handle dynamic API operations,
-    // we manage local state/caching on the client app database/LocalStorage level.
-    return;
-  }
-
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
 
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+      return fetch(event.request).then(response => {
+        if (!response || response.status !== 200 || response.type !== 'basic') return response;
+
+        // Cache JS/CSS/font chunks dynamically as they're loaded
+        const url = new URL(event.request.url);
+        if (url.pathname.match(/\.(js|css|woff2?|ttf|svg|png|ico|webp)$/)) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
 
-        // Cache newly requested assets dynamically (eg, future JS chunk or offline asset JSON)
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return networkResponse;
+        return response;
       }).catch(() => {
-        // Fallback for offline file requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
+        if (event.request.mode === 'navigate') return caches.match('/index.html');
       });
     })
   );

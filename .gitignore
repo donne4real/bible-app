@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Android — keep project files, exclude build outputs and secrets
+android/.gradle/
+android/app/build/
+android/build/
+*.keystore
+*.jks

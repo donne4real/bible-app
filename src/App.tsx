@@ -21,7 +21,6 @@ import {
   Layers,
 } from 'lucide-react';
 import { BIBLE_BOOKS } from './bibleStructure';
-import { DAILY_WORDS_OF_ENCOURAGEMENT } from './bibleData';
 import { getVerses } from './bibleLoader';
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata } from './types';
 import Sidebar from './components/Sidebar';
@@ -117,9 +116,6 @@ export default function App() {
   });
   const [searchFocused, setSearchFocused] = useState(false);
 
-  // --- Daily verse ---
-  const [dailyVerseIndex, setDailyVerseIndex] = useState(0);
-
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const headerRef          = useRef<HTMLDivElement>(null);
 
@@ -144,8 +140,6 @@ export default function App() {
 
     const rawB = localStorage.getItem('bible_bookmarks');
     if (rawB) { try { setBookmarks(JSON.parse(rawB)); } catch (_) {} }
-
-    setDailyVerseIndex(new Date().getDate() % DAILY_WORDS_OF_ENCOURAGEMENT.length);
   }, []);
 
   const handleUpdateSettings = (updates: Partial<ReaderSettings>) => {

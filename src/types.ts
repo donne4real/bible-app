@@ -46,7 +46,6 @@ export interface ReaderSettings {
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
   zenMode: boolean;
   theme: 'light' | 'sepia' | 'dark' | 'charcoal';
-  geminiApiKey?: string;
   offlineOnly?: boolean;
 }
 

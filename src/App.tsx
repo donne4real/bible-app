@@ -28,7 +28,6 @@ import {
   Columns,
   Layers,
   ArrowLeftRight,
-  Key,
   DatabaseBackup
 } from 'lucide-react';
 import { BIBLE_BOOKS, getBookById } from './bibleStructure';
@@ -58,7 +57,7 @@ const TRANSLATIONS = [
   { id: 'ibo', name: 'Biblia Nso (Igbo)', short: 'IGB' },
   { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)', short: 'HAU' },
   { id: 'pcm', name: 'Nigerian Pidgin Bible', short: 'PCM' },
-  { id: 'ije', name: 'Bíbélì Mímọ́ l’édè Ìjẹ̀bú (Ijebu)', short: 'IJE' },
+  { id: 'ije', name: "Bíbélì Mímọ́ l'édè Ìjẹ̀bú (Ijebu)", short: 'IJE' },
   { id: 'tiv', name: 'Bibilo kachizha (Tiv)', short: 'TIV' },
   { id: 'urh', name: 'Obe Rere (Urhobo)', short: 'URH' },
   { id: 'efi', name: 'Edisana Ñwed Abasi (Efik/Ibibio)', short: 'EFI' },
@@ -74,107 +73,79 @@ const TRANSLATIONS = [
   { id: 'amh', name: 'መጽሐፍ ቅዱስ (Amharic)', short: 'AMH' }
 ];
 
-async function translateVersesClientSide(
-  apiKey: string,
+const STANDARD_TRANSLATIONS = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
+
+async function fetchVerses(
   translation: string,
   bookId: string,
   bookName: string,
   chapter: number,
-  englishVerses: any[]
-): Promise<any[]> {
-  const dynamicLangs: { [key: string]: { name: string; native: string } } = {
-    lsg: { name: 'French (Louis Segond)', native: 'Louis Segond' },
-    yor: { name: 'Yoruba', native: 'Bibeli Mimọ' },
-    ibo: { name: 'Igbo', native: 'Biblia Nso' },
-    hau: { name: 'Hausa', native: 'Littafi Mai Tsarki' },
-    pcm: { name: 'Nigerian Pidgin', native: 'Pidgin Bible' },
-    ije: { name: 'Ijebu (Yoruba dialect)', native: 'Bíbélì Mímọ́ l’édè Ìjẹ̀bú' },
-    tiv: { name: 'Tiv', native: 'Bibilo kachizha' },
-    urh: { name: 'Urhobo', native: 'Obe Rere' },
-    efi: { name: 'Efik / Ibibio', native: 'Edisana Ñwed Abasi' },
-    edo: { name: 'Edo / Benin', native: 'Ebe Nọhuanrẹn l’ede Edo' },
-    ijw: { name: 'Ijaw', native: 'Ebi Eni l’ede Ijaw' },
-    igl: { name: 'Igala', native: 'Abakwane l’ede Igala' },
-    ewe: { name: 'Ewe', native: 'Biblia' },
-    twi: { name: 'Twi', native: 'Twere Kronkron' },
-    swa: { name: 'Swahili', native: 'Biblia Takatifu' },
-    zul: { name: 'Zulu', native: 'IBhayibheli Elingcwele' },
-    xho: { name: 'Xhosa', native: 'IBhayibhile' },
-    sna: { name: 'Shona', native: 'Bhaibheri' },
-    amh: { name: 'Amharic', native: 'መጽሐፍ ቅዱስ' },
-  };
+  isEffectivelyOffline: boolean
+): Promise<{ verses: Verse[]; isFallback?: boolean; isEnglishFallback?: boolean }> {
+  // 1. Preloaded offline DB
+  const offlineVerses = getOfflineVerses(translation, bookId, chapter, isEffectivelyOffline);
+  if (offlineVerses && offlineVerses.length > 0) return { verses: offlineVerses };
 
-  const langDetail = dynamicLangs[translation];
-  if (!langDetail) {
-    return englishVerses;
+  // 2. Legacy curated offline bundles
+  if ((bookId === 'PSA' && chapter === 23) || (bookId === 'JHN' && chapter === 1)) {
+    const offlineSet = OFFLINE_COLLECTION[translation]?.[chapter];
+    if (offlineSet && offlineSet.length > 0) return { verses: offlineSet };
+  }
+  if (bookId === 'GEN' && chapter === 1 && translation === 'web') {
+    return { verses: GENESIS_1_FALLBACK };
   }
 
-  const versesList = englishVerses
-    .map((v: any) => `[Verse ${v.verse}] ${v.text}`)
-    .join('\n');
+  // 3. localStorage cache
+  const cacheKey = `cached_bible_${translation}_${bookId}_${chapter}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    try { return { verses: JSON.parse(cached) }; } catch (e) { console.warn('Corrupt cache', e); }
+  }
 
-  const prompt = `You are an expert translator specializing in translating holy scriptures into different world languages.
-Translate the following English Bible verses (from the World English Bible version) into accurate, beautiful, and theologically clean ${langDetail.name} (${langDetail.native}) translation.
+  // 4. Offline: try English preloaded fallback
+  if (isEffectivelyOffline) {
+    const englishFallback = getOfflineVerses('web', bookId, chapter, true);
+    if (englishFallback && englishFallback.length > 0) return { verses: englishFallback, isEnglishFallback: true };
+    return { verses: [] };
+  }
 
-Maintain the exact original verse numbers and formatting.
-Render complete verses—do not skip, abbreviate, or merge any verses.
-Ensure the translation sounds natural, poetic, elegant, and respectful to a native speaker, using standard conventions of the ${langDetail.name} version where applicable.
+  // 5. Online API fetch — standard translations go direct; dynamic ones route through backend
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+  let verses: Verse[] = [];
+  let isFallback = false;
 
-Provide your output ONLY as a raw JSON array of objects, with no external markdown annotations, conversational text, or wrapper.
-The JSON array must be structured exactly like this:
-[
-  { "verse": 1, "text": "..." },
-  { "verse": 2, "text": "..." }
-]
-
-Input Verses:
-${versesList}`;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
-      }),
+  if (STANDARD_TRANSLATIONS.includes(translation)) {
+    const url = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${translation}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.verses?.length > 0) {
+        verses = data.verses.map((v: any) => ({
+          book_id: bookId, book_name: bookName, chapter, verse: v.verse, text: v.text,
+        }));
+      }
     }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Gemini client translation request failed with status ${response.status}`);
+  } else {
+    const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('text/html')) {
+        const payload = await res.json();
+        if (payload?.verses?.length > 0) {
+          verses = payload.verses;
+          isFallback = payload.verses[0]?.isFallback ?? false;
+        }
+      }
+    }
   }
 
-  const resJson = await response.json();
-  const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
-  const translatedArray = JSON.parse(replyText);
+  if (verses.length > 0) {
+    localStorage.setItem(cacheKey, JSON.stringify(verses));
+    return { verses, isFallback };
+  }
 
-  return englishVerses.map((orig: any) => {
-    const translationMatch = Array.isArray(translatedArray)
-      ? translatedArray.find((item: any) => Number(item.verse) === orig.verse)
-      : null;
-
-    return {
-      book_id: bookId,
-      book_name: bookName,
-      chapter: chapter,
-      verse: orig.verse,
-      text: translationMatch ? translationMatch.text : orig.text,
-    };
-  });
+  throw new Error('Scripture source not available.');
 }
 
 export default function App() {
@@ -445,281 +416,76 @@ export default function App() {
       setErrorStatus(null);
       setTranslationNotice(null);
       setOfflineCommentary(null);
-      setSelectedVerses([]); // reset active selections
+      setSelectedVerses([]);
 
       const bookId = selectedBook.id;
       const bookName = selectedBook.name;
-      const chapter = selectedChapter;
       const translation = settings.translation;
-      const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
 
-      // 1. Check PWA Static Preloaded DB (Local database in code)
-      const offlineVerses = getOfflineVerses(translation, bookId, chapter, effectiveOffline);
-      if (offlineVerses && offlineVerses.length > 0) {
-        if (active) {
-          setVerses(offlineVerses);
-          setLoading(false);
-        }
-        return;
-      }
+      try {
+        const result = await fetchVerses(translation, bookId, bookName, selectedChapter, effectiveOffline);
 
-      // 2. Check legacy offline curated collections bundle first
-      if ((bookId === 'PSA' && chapter === 23) || (bookId === 'JHN' && chapter === 1)) {
-        const offlineSet = OFFLINE_COLLECTION[translation]?.[chapter];
-        if (offlineSet) {
-          if (active) {
-            setVerses(offlineSet);
-            setLoading(false);
-          }
-          return;
-        }
-      }
+        if (!active) return;
 
-      if (bookId === 'GEN' && chapter === 1 && translation === 'web') {
-        if (active) {
-          setVerses(GENESIS_1_FALLBACK);
-          setLoading(false);
-        }
-        return;
-      }
-
-      // 3. Check LocalStorage cache index
-      const storageCacheKey = `cached_bible_${translation}_${bookId}_${chapter}`;
-      const cachedData = localStorage.getItem(storageCacheKey);
-      if (cachedData) {
-        try {
-          const parsed = JSON.parse(cachedData);
-          if (active) {
-            setVerses(parsed);
-            setLoading(false);
-          }
-          return;
-        } catch (err) {
-          console.warn("Corrupt cache encountered", err);
-        }
-      }
-
-      // 3.5 Bypasses dynamic API and web dependencies early in 100% Offline Mode
-      if (effectiveOffline) {
-        // Attempt a local pre-packaged English fallback if available (e.g. Genesis 1, Psalms 23, John 1)
-        const localEnglishFallback = getOfflineVerses('web', bookId, chapter, true);
-        if (localEnglishFallback && localEnglishFallback.length > 0) {
-          if (active) {
-            setVerses(localEnglishFallback);
-            setTranslationNotice(`No local ${TRANSLATIONS.find(t => t.id === translation)?.name || translation.toUpperCase()} offline cache found for ${bookName} Ch ${chapter}. Displaying preloaded offline English (WEB). Go Online in settings to stream additions!`);
-            // Load offline commentary
-            const commentary = getOfflineCommentary(bookId);
-            if (commentary) {
-              setOfflineCommentary(commentary);
-            }
-            setLoading(false);
-          }
-          return;
-        }
-
-        // If not even English has it pre-bundled (e.g. Genesis 5), load interactive learning commentary directly
-        if (active) {
+        if (result.verses.length === 0) {
+          // Offline with no preloaded content — show study commentary if available
           const commentary = getOfflineCommentary(bookId);
           if (commentary) {
             setOfflineCommentary(commentary);
-            // Build temporary key verses
-            const chKeyVerses = commentary.keyVerses.filter(kv => kv.chapter === chapter);
-            if (chKeyVerses.length > 0) {
-              const formattedVerses: Verse[] = chKeyVerses.map(kv => ({
-                book_id: bookId,
-                book_name: bookName,
-                chapter: chapter,
-                verse: kv.verse,
-                text: kv.text
-              }));
-              setVerses(formattedVerses);
-            } else {
-              const virtualVerses: Verse[] = [
-                {
-                  book_id: bookId,
-                  book_name: bookName,
-                  chapter: chapter,
-                  verse: 1,
-                  text: `Study and reflect on the divine themes of ${bookName} Chapter ${chapter}. Read the comprehensive standalone offline outline, structural analysis, and African focus commentary below!`
-                }
-              ];
-              setVerses(virtualVerses);
-            }
+            const chKeyVerses = commentary.keyVerses.filter(kv => kv.chapter === selectedChapter);
+            setVerses(chKeyVerses.length > 0
+              ? chKeyVerses.map(kv => ({ book_id: bookId, book_name: bookName, chapter: selectedChapter, verse: kv.verse, text: kv.text }))
+              : [{ book_id: bookId, book_name: bookName, chapter: selectedChapter, verse: 1, text: `Study and reflect on the divine themes of ${bookName} Chapter ${selectedChapter}. Read the comprehensive standalone offline outline, structural analysis, and African focus commentary below!` }]
+            );
           } else {
             setErrorStatus(`Offline Mode active. Please connect to a network to unlock other chapters. You have full instant offline access to Genesis 1, Psalms 23/91/121, Proverbs 3, Romans 8 and John 1/3!`);
           }
-          setLoading(false);
-        }
-        return;
-      }
-
-      // 4. Dynamic API Loading since not pre-bundled or cached yet
-      try {
-        let payload: any = null;
-
-        // A. If it is a standard translation, fetch directly from public bible-api.com CORS API
-        if (standardTranslations.includes(translation)) {
-          const directUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${translation}`;
-          const directResponse = await fetch(directUrl);
-          if (directResponse.ok) {
-            const directPayload = await directResponse.json();
-            if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
-              payload = {
-                verses: directPayload.verses.map((v: any) => ({
-                  book_id: bookId,
-                  book_name: bookName,
-                  chapter: chapter,
-                  verse: v.verse,
-                  text: v.text
-                }))
-              };
-            }
-          }
         } else {
-          // B. If dynamic language translation is needed (Yoruba, Swahili, etc.)
-          // Try client-side in-browser API translation if a key is provided
-          if (settings.geminiApiKey) {
-            try {
-              const webUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
-              const webResponse = await fetch(webUrl);
-              if (webResponse.ok) {
-                const webData = await webResponse.json();
-                if (webData && webData.verses && webData.verses.length > 0) {
-                  const clientTranslatedVerses = await translateVersesClientSide(
-                    settings.geminiApiKey,
-                    translation,
-                    bookId,
-                    bookName,
-                    chapter,
-                    webData.verses
-                  );
-                  if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
-                    payload = { verses: clientTranslatedVerses };
-                  }
-                }
-              }
-            } catch (clientErr) {
-              console.error("In-browser client translation failed", clientErr);
-            }
+          setVerses(result.verses);
+          if (result.isEnglishFallback) {
+            setTranslationNotice(`No local ${TRANSLATIONS.find(t => t.id === translation)?.name || translation.toUpperCase()} offline cache found for ${bookName} Ch ${selectedChapter}. Displaying preloaded offline English (WEB). Go Online in settings to stream additions!`);
+            const commentary = getOfflineCommentary(bookId);
+            if (commentary) setOfflineCommentary(commentary);
+          } else if (result.isFallback) {
+            setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured on the server.`);
           }
-
-          // If client translation didn't run or didn't produce verses, use backend translation
-          if (!payload) {
-            const isClientOnlyHost = typeof window !== 'undefined' && 
-              window.location.hostname !== 'localhost' && 
-              window.location.hostname !== '127.0.0.1' && 
-              !window.location.hostname.includes('ais-dev-') && 
-              !window.location.hostname.includes('ais-pre-') && 
-              !window.location.hostname.includes('run.app');
-
-            // Target the live production backend if host is client-only (Netlify/Android) & language needs AI translations
-            const apiBase = isClientOnlyHost 
-              ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
-              : '';
-
-            const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
-            let response = await fetch(url);
-            
-            let isResponseHtmlJsonFallback = false;
-
-            // On Netlify/static hosting, missing routes fallback to serving index.html with a 200 OK
-            if (response.ok) {
-              const contentType = response.headers.get('content-type') || '';
-              if (contentType.includes('text/html')) {
-                isResponseHtmlJsonFallback = true;
-              } else {
-                payload = await response.json();
-              }
-            }
-          }
-        }
-
-        if (payload && payload.verses && payload.verses.length > 0) {
-          // Cache permanently in localStorage for premium offline-first operations future load!
-          localStorage.setItem(storageCacheKey, JSON.stringify(payload.verses));
-          if (active) {
-            setVerses(payload.verses);
-            if (payload.verses[0]?.isFallback) {
-              setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured in your settings.`);
-            }
-          }
-        } else {
-          throw new Error('Scripture source not available.');
         }
       } catch (err: any) {
-        console.warn("Bible API loading issue. Offline fallback triggered.", err);
-        
-        if (active) {
-          // Attempt to load standard translation (WEB) directly from public bible-api.com CORS API as a graceful fallback
-          try {
-            const fallbackUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
-            const directResponse = await fetch(fallbackUrl);
-            if (directResponse.ok) {
-              const directPayload = await directResponse.json();
-              if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
-                const formattedFallbackVerses: Verse[] = directPayload.verses.map((v: any) => ({
-                  book_id: bookId,
-                  book_name: bookName,
-                  chapter: chapter,
-                  verse: v.verse,
-                  text: v.text
-                }));
-                setVerses(formattedFallbackVerses);
-                // Only show translation key warning if the user's selected translation was meant to be a dynamic one
-                if (!standardTranslations.includes(translation)) {
-                  setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured in your settings.`);
-                }
-                
-                // Load offline commentary as supportive guide
-                const commentary = getOfflineCommentary(bookId);
-                if (commentary) {
-                  setOfflineCommentary(commentary);
-                }
-                setLoading(false);
-                return;
-              }
-            }
-          } catch (fbErr) {
-            console.warn("Could not load direct public fallback verses", fbErr);
-          }
+        if (!active) return;
+        console.warn('Bible API loading issue. Offline fallback triggered.', err);
 
-          // Look up offline study guides & commentary for 100% standalone offline experiences
+        // Attempt direct WEB fallback from public bible-api.com
+        try {
+          const fallbackResult = await fetchVerses('web', bookId, bookName, selectedChapter, false);
+          if (active && fallbackResult.verses.length > 0) {
+            setVerses(fallbackResult.verses);
+            if (!STANDARD_TRANSLATIONS.includes(translation)) {
+              setTranslationNotice(`Using English translation fallback. For dynamic African, French, or custom AI translations, please ensure GEMINI_API_KEY is configured on the server.`);
+            }
+            const commentary = getOfflineCommentary(bookId);
+            if (commentary) setOfflineCommentary(commentary);
+            return;
+          }
+        } catch (fbErr) {
+          console.warn('Could not load direct public fallback verses', fbErr);
+        }
+
+        // Commentary-only fallback
+        if (active) {
           const commentary = getOfflineCommentary(bookId);
           if (commentary) {
             setOfflineCommentary(commentary);
-            
-            // Build temporary highlight verses based on the commentary's key verses of this chapter
-            const chKeyVerses = commentary.keyVerses.filter(kv => kv.chapter === chapter);
-            if (chKeyVerses.length > 0) {
-              const formattedVerses: Verse[] = chKeyVerses.map(kv => ({
-                book_id: bookId,
-                book_name: bookName,
-                chapter: chapter,
-                verse: kv.verse,
-                text: kv.text
-              }));
-              setVerses(formattedVerses);
-            } else {
-              // Generate some virtual helper verses to let structural layout look magnificent
-              const virtualVerses: Verse[] = [
-                {
-                  book_id: bookId,
-                  book_name: bookName,
-                  chapter: chapter,
-                  verse: 1,
-                  text: `Study and reflect on the divine themes of ${bookName} Chapter ${chapter}. See the Comprehensive Interactive Commentary & Outlines below.`
-                }
-              ];
-              setVerses(virtualVerses);
-            }
+            const chKeyVerses = commentary.keyVerses.filter(kv => kv.chapter === selectedChapter);
+            setVerses(chKeyVerses.length > 0
+              ? chKeyVerses.map(kv => ({ book_id: bookId, book_name: bookName, chapter: selectedChapter, verse: kv.verse, text: kv.text }))
+              : [{ book_id: bookId, book_name: bookName, chapter: selectedChapter, verse: 1, text: `Study and reflect on the divine themes of ${bookName} Chapter ${selectedChapter}. See the Comprehensive Interactive Commentary & Outlines below.` }]
+            );
           } else {
-            setErrorStatus("Offline Mode. Connect to secure networks to download this chapter. You can instantly access Genesis, Matthew, John, Psalms & Proverbs offline!");
+            setErrorStatus('Offline Mode. Connect to secure networks to download this chapter. You can instantly access Genesis, Matthew, John, Psalms & Proverbs offline!');
           }
         }
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     };
 
@@ -746,166 +512,19 @@ export default function App() {
 
       const bookId = selectedBook.id;
       const bookName = selectedBook.name;
-      const chapter = selectedChapter;
-      const translation = compareTranslation;
 
-      // 0. Check preloaded offline verses first
-      const offlineVerses = getOfflineVerses(translation, bookId, chapter, effectiveOffline);
-      if (offlineVerses && offlineVerses.length > 0) {
-        if (active) {
-          setCompareVerses(offlineVerses);
-          setCompareLoading(false);
-        }
-        return;
-      }
-
-      // 1. Check offline curated collections bundle second
-      if ((bookId === 'PSA' && chapter === 23) || (bookId === 'JHN' && chapter === 1)) {
-        const offlineSet = OFFLINE_COLLECTION[translation]?.[chapter];
-        if (offlineSet) {
-          if (active) {
-            setCompareVerses(offlineSet);
-            setCompareLoading(false);
-          }
-          return;
-        }
-      }
-
-      if (bookId === 'GEN' && chapter === 1 && translation === 'web') {
-        if (active) {
-          setCompareVerses(GENESIS_1_FALLBACK);
-          setCompareLoading(false);
-        }
-        return;
-      }
-
-      // 2. Check LocalStorage cache index
-      const storageCacheKey = `cached_bible_${translation}_${bookId}_${chapter}`;
-      const cachedData = localStorage.getItem(storageCacheKey);
-      if (cachedData) {
-        try {
-          const parsed = JSON.parse(cachedData);
-          if (active) {
-            setCompareVerses(parsed);
-            setCompareLoading(false);
-          }
-          return;
-        } catch (err) {
-          console.warn("Corrupt compare cache encountered", err);
-        }
-      }
-
-      // 2.5 Stop here if we are strictly in offline-only mode
-      if (effectiveOffline) {
-        // Attempt a local pre-packaged English fallback (e.g. Genesis 1, Psalms 23, John 1)
-        const localEnglishFallback = getOfflineVerses('web', bookId, chapter, true);
-        if (localEnglishFallback && localEnglishFallback.length > 0) {
-          if (active) {
-            setCompareVerses(localEnglishFallback);
-            setCompareLoading(false);
-          }
-          return;
-        }
-        if (active) {
-          setCompareError("Comparison translation not preloaded offline.");
-          setCompareLoading(false);
-        }
-        return;
-      }
-
-      // 3. Dynamic API Loading since not pre-bundled or cached yet
       try {
-        let payload: any = null;
-        const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
-
-        // A. If it is a standard translation, fetch directly from public bible-api.com CORS API
-        if (standardTranslations.includes(translation)) {
-          const directUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=${translation}`;
-          const directResponse = await fetch(directUrl);
-          if (directResponse.ok) {
-            const directPayload = await directResponse.json();
-            if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
-              payload = {
-                verses: directPayload.verses.map((v: any) => ({
-                  book_id: bookId,
-                  book_name: bookName,
-                  chapter: chapter,
-                  verse: v.verse,
-                  text: v.text
-                }))
-              };
-            }
-          }
+        const result = await fetchVerses(compareTranslation, bookId, bookName, selectedChapter, effectiveOffline);
+        if (!active) return;
+        if (result.verses.length === 0) {
+          setCompareError('Comparison translation not preloaded offline.');
         } else {
-          // B. If dynamic language translation is needed (Yoruba, Swahili, etc.)
-          // Try client-side in-browser API translation if a key is provided
-          if (settings.geminiApiKey) {
-            try {
-              const webUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${chapter}?translation=web`;
-              const webResponse = await fetch(webUrl);
-              if (webResponse.ok) {
-                const webData = await webResponse.json();
-                if (webData && webData.verses && webData.verses.length > 0) {
-                  const clientTranslatedVerses = await translateVersesClientSide(
-                    settings.geminiApiKey,
-                    translation,
-                    bookId,
-                    bookName,
-                    chapter,
-                    webData.verses
-                  );
-                  if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
-                    payload = { verses: clientTranslatedVerses };
-                  }
-                }
-              }
-            } catch (clientErr) {
-              console.error("In-browser client comparison translation failed", clientErr);
-            }
-          }
-
-          // If client translation didn't run or didn't produce verses, use backend translation
-          if (!payload) {
-            const isClientOnlyHost = typeof window !== 'undefined' && 
-              window.location.hostname !== 'localhost' && 
-              window.location.hostname !== '127.0.0.1' && 
-              !window.location.hostname.includes('ais-dev-') && 
-              !window.location.hostname.includes('ais-pre-') && 
-              !window.location.hostname.includes('run.app');
-
-            const apiBase = isClientOnlyHost 
-              ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
-              : '';
-
-            const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${chapter}`;
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-              throw new Error('Comparison version chapter not available or failed to load.');
-            }
-            
-            payload = await response.json();
-          }
-        }
-        
-        if (payload && payload.verses && payload.verses.length > 0) {
-          // Cache permanently in localStorage for premium offline-first operations future load!
-          localStorage.setItem(storageCacheKey, JSON.stringify(payload.verses));
-          if (active) {
-            setCompareVerses(payload.verses);
-          }
-        } else {
-          throw new Error(payload?.error || 'Format unknown');
+          setCompareVerses(result.verses);
         }
       } catch (err: any) {
-        console.warn("Compare API loading issue. Offline fallback triggered.", err);
-        if (active) {
-          setCompareError(err.message || "Could not load compare translation.");
-        }
+        if (active) setCompareError(err.message || 'Could not load compare translation.');
       } finally {
-        if (active) {
-          setCompareLoading(false);
-        }
+        if (active) setCompareLoading(false);
       }
     };
 
@@ -1476,27 +1095,9 @@ export default function App() {
           </div>
 
           {translationNotice && (
-            <div className="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-current text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-              <div className="flex items-start sm:items-center gap-2.5">
-                <AlertCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0 select-none animate-pulse" />
-                <span className="leading-relaxed">{translationNotice}</span>
-              </div>
-              <button
-                onClick={() => {
-                  setShowSettings(true);
-                  setTimeout(() => {
-                    const input = document.getElementById('client-gemini-api-key-input');
-                    if (input) {
-                      input.focus();
-                      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  }, 150);
-                }}
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-medium text-[11px] transition-all flex items-center gap-1.5 shadow-sm active:scale-95 self-end sm:self-auto cursor-pointer"
-              >
-                <Key className="w-3.5 h-3.5" />
-                Setup Key
-              </button>
+            <div className="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-current text-xs flex items-start gap-2.5 animate-fade-in">
+              <AlertCircle className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 select-none animate-pulse" />
+              <span className="leading-relaxed">{translationNotice}</span>
             </div>
           )}
 
@@ -2153,7 +1754,6 @@ export default function App() {
         currentTranslation={settings.translation}
         translationsList={TRANSLATIONS}
         currentBookId={selectedBook.id}
-        geminiApiKey={settings.geminiApiKey}
         onRefreshTrigger={() => setCacheRefreshCounter(prev => prev + 1)}
       />
 

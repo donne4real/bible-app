@@ -1,4 +1,4 @@
-package com.wordupAfrica.bibleReader;
+﻿package com.wordupafrica.biblereader;
 
 import com.getcapacitor.BridgeActivity;
 

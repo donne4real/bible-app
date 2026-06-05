@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.wordupAfrica.bibleReader',
+  appId: 'com.wordupafrica.biblereader',
   appName: 'WordUp Africa Bible Reader',
   webDir: 'dist',
   server: {

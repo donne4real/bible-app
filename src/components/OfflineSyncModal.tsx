@@ -157,12 +157,14 @@ export default function OfflineSyncModal({
   // Settings selection
   const [selectedTrans, setSelectedTrans] = useState<string>(currentTranslation);
   const [selectedBook, setSelectedBook] = useState<string>(currentBookId);
+  const [downloadScope, setDownloadScope] = useState<'book' | 'entire'>('book');
 
   // Sync operations
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0); // overall percentage
   const [downloadText, setDownloadText] = useState('');
   const [cancelRequested, setCancelRequested] = useState(false);
+  const cancelRef = React.useRef(false);
 
   // Stats
   const [cachedStats, setCachedStats] = useState<CachedBookStats[]>([]);
@@ -256,35 +258,92 @@ export default function OfflineSyncModal({
       return;
     }
 
-    const bookObj = BIBLE_BOOKS.find((b) => b.id === selectedBook);
     const transObj = translationsList.find((t) => t.id === selectedTrans);
-    if (!bookObj || !transObj) return;
+    if (!transObj) return;
+
+    const translation = transObj.id;
+    const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
+    const isStandard = standardTranslations.includes(translation);
+
+    // Warning confirmation for entire dynamic AI translation or massive server requests
+    if (downloadScope === 'entire') {
+      if (geminiApiKey && !isStandard) {
+        const confirmEntireAI = confirm(
+          `WARNING: Downloading the ENTIRE Bible under ${transObj.name} will attempt to dynamically translate all 1,189 chapters on-demand using your Gemini API key. This will take a long time and could exceed your API quota. We recommend downloading books one-by-one as needed, or downloading standard versions instead.\n\nDo you want to proceed with full AI translation?`
+        );
+        if (!confirmEntireAI) return;
+      } else if (!isStandard) {
+        const confirmEntireServer = confirm(
+          `Downloading the ENTIRE Bible under ${transObj.name} will stream all 1,189 chapters from the API server. This will make 1,189 API requests. Please ensure you have a stable internet connection.\n\nDo you want to proceed?`
+        );
+        if (!confirmEntireServer) return;
+      } else {
+        const confirmEntireStandard = confirm(
+          `You are about to download the ENTIRE ${transObj.name} translation (1,189 chapters) for full offline use. This will be cached directly in your browser's local library.\n\nDo you want to proceed?`
+        );
+        if (!confirmEntireStandard) return;
+      }
+    }
 
     setIsDownloading(true);
     setCancelRequested(false);
+    cancelRef.current = false;
     setDownloadProgress(0);
 
-    const totalChapters = bookObj.chapters;
-    const bookName = bookObj.name;
-    const bookId = bookObj.id;
-    const translation = transObj.id;
+    // Build the queue of chapters to download
+    const queue: { bookId: string; bookName: string; chapter: number }[] = [];
 
+    if (downloadScope === 'book') {
+      const bookObj = BIBLE_BOOKS.find((b) => b.id === selectedBook);
+      if (!bookObj) {
+        setIsDownloading(false);
+        return;
+      }
+      for (let ch = 1; ch <= bookObj.chapters; ch++) {
+        queue.push({ bookId: bookObj.id, bookName: bookObj.name, chapter: ch });
+      }
+    } else {
+      // Entire translation (all 66 books)
+      BIBLE_BOOKS.forEach((bookObj) => {
+        for (let ch = 1; ch <= bookObj.chapters; ch++) {
+          queue.push({ bookId: bookObj.id, bookName: bookObj.name, chapter: ch });
+        }
+      });
+    }
+
+    const totalChapters = queue.length;
     let successfulDownloads = 0;
+    let skippedCount = 0;
 
-    for (let currentCh = 1; currentCh <= totalChapters; currentCh++) {
-      if (cancelRequested) {
+    for (let i = 0; i < queue.length; i++) {
+      if (cancelRef.current) {
         break;
       }
 
-      setDownloadText(`Downloading ${bookName} (${transObj.short}) - Chapter ${currentCh} of ${totalChapters}...`);
-      
+      const item = queue[i];
+      const storageCacheKey = `cached_bible_${translation}_${item.bookId}_${item.chapter}`;
+
+      // Check if already in cache and skip to optimize speed and efficiency
+      const cached = localStorage.getItem(storageCacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            skippedCount++;
+            setDownloadProgress(Math.round(((i + 1) / totalChapters) * 100));
+            continue;
+          }
+        } catch (_) {}
+      }
+
+      setDownloadText(`Downloading ${item.bookName} (${transObj.short}) - Ch ${item.chapter} (${i + 1} of ${totalChapters})...`);
+
       try {
-        const standardTranslations = ['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'];
         let payload: any = null;
 
         // Fetch using custom client Gemini engine if Key is available
-        if (geminiApiKey && !standardTranslations.includes(translation)) {
-          const webUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${currentCh}?translation=web`;
+        if (geminiApiKey && !isStandard) {
+          const webUrl = `https://bible-api.com/${encodeURIComponent(item.bookName)}+${item.chapter}?translation=web`;
           const webResponse = await fetch(webUrl);
           if (webResponse.ok) {
             const webData = await webResponse.json();
@@ -292,9 +351,9 @@ export default function OfflineSyncModal({
               const clientTranslatedVerses = await translateVersesClientSide(
                 geminiApiKey,
                 translation,
-                bookId,
-                bookName,
-                currentCh,
+                item.bookId,
+                item.bookName,
+                item.chapter,
                 webData.verses
               );
               if (clientTranslatedVerses && clientTranslatedVerses.length > 0) {
@@ -317,7 +376,7 @@ export default function OfflineSyncModal({
             ? 'https://ais-pre-hpaahtl46w3udogfkuqmxr-565813577069.us-west2.run.app' 
             : '';
 
-          const url = `${apiBase}/api/bible?translation=${translation}&book_id=${bookId}&book_name=${encodeURIComponent(bookName)}&chapter=${currentCh}`;
+          const url = `${apiBase}/api/bible?translation=${translation}&book_id=${item.bookId}&book_name=${encodeURIComponent(item.bookName)}&chapter=${item.chapter}`;
           const response = await fetch(url);
           
           let isResponseHtmlJsonFallback = false;
@@ -331,17 +390,17 @@ export default function OfflineSyncModal({
           }
 
           if (!response.ok || isResponseHtmlJsonFallback) {
-            if (standardTranslations.includes(translation)) {
-              const directUrl = `https://bible-api.com/${encodeURIComponent(bookName)}+${currentCh}?translation=${translation}`;
+            if (isStandard) {
+              const directUrl = `https://bible-api.com/${encodeURIComponent(item.bookName)}+${item.chapter}?translation=${translation}`;
               const directResponse = await fetch(directUrl);
               if (directResponse.ok) {
                 const directPayload = await directResponse.json();
                 if (directPayload && directPayload.verses && directPayload.verses.length > 0) {
                   payload = {
                     verses: directPayload.verses.map((v: any) => ({
-                      book_id: bookId,
-                      book_name: bookName,
-                      chapter: currentCh,
+                      book_id: item.bookId,
+                      book_name: item.bookName,
+                      chapter: item.chapter,
                       verse: v.verse,
                       text: v.text
                     }))
@@ -353,17 +412,16 @@ export default function OfflineSyncModal({
         }
 
         if (payload && payload.verses && payload.verses.length > 0) {
-          const storageCacheKey = `cached_bible_${translation}_${bookId}_${currentCh}`;
           localStorage.setItem(storageCacheKey, JSON.stringify(payload.verses));
           successfulDownloads++;
         }
       } catch (err) {
-        console.warn(`Error caching ${bookName} Ch ${currentCh}:`, err);
+        console.warn(`Error caching ${item.bookName} Ch ${item.chapter}:`, err);
       }
 
-      setDownloadProgress(Math.round((currentCh / totalChapters) * 100));
+      setDownloadProgress(Math.round(((i + 1) / totalChapters) * 100));
       // Small pause to prevent browser socket clamping
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, skippedCount % 10 === 0 ? 30 : 15));
     }
 
     setIsDownloading(false);
@@ -375,6 +433,7 @@ export default function OfflineSyncModal({
   };
 
   const handleCancelDownload = () => {
+    cancelRef.current = true;
     setCancelRequested(true);
     setIsDownloading(false);
     setDownloadText('');
@@ -522,16 +581,47 @@ export default function OfflineSyncModal({
               ) : (
                 /* Static Setup UI */
                 <div className="space-y-4">
+                  {/* Download Scope Toggle */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Select Download Type:
+                    </label>
+                    <div id="download-scope-selector" className="grid grid-cols-2 gap-2 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50">
+                      <button
+                        type="button"
+                        onClick={() => setDownloadScope('book')}
+                        className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          downloadScope === 'book'
+                            ? 'bg-amber-500 text-white shadow-md font-black ring-1 ring-amber-400'
+                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        📖 Single Bible Book
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDownloadScope('entire')}
+                        className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          downloadScope === 'entire'
+                            ? 'bg-amber-500 text-white shadow-md font-black ring-1 ring-amber-400 animate-pulse'
+                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        🌍 Entire Version (All Books)
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Translation Choice */}
-                    <div>
+                    <div className={downloadScope === 'entire' ? 'sm:col-span-2' : ''}>
                       <label className="block text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 mb-1">
-                        Select Translation:
+                        Select Bible Version/Translation:
                       </label>
                       <select
                         value={selectedTrans}
                         onChange={(e) => setSelectedTrans(e.target.value)}
-                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-zinc-800 dark:text-zinc-100"
+                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-zinc-800 dark:text-zinc-100 font-medium"
                       >
                         {translationsList.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -542,23 +632,35 @@ export default function OfflineSyncModal({
                     </div>
 
                     {/* Book Choice */}
-                    <div>
-                      <label className="block text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 mb-1">
-                        Select Bible Book:
-                      </label>
-                      <select
-                        value={selectedBook}
-                        onChange={(e) => setSelectedBook(e.target.value)}
-                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-zinc-800 dark:text-zinc-100"
-                      >
-                        {BIBLE_BOOKS.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name} ({b.chapters} Ch)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {downloadScope === 'book' && (
+                      <div className="animate-fade-in">
+                        <label className="block text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 mb-1">
+                          Select Bible Book:
+                        </label>
+                        <select
+                          value={selectedBook}
+                          onChange={(e) => setSelectedBook(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-zinc-800 dark:text-zinc-100"
+                        >
+                          {BIBLE_BOOKS.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name} ({b.chapters} Ch)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Context notice explaining skip optimization and total chapters */}
+                  {downloadScope === 'entire' && (
+                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-zinc-600 dark:text-zinc-400 flex items-start gap-2 animate-fade-in">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                      <span>
+                        Resume & Skip Optimization: If you initiate or pause the download, chapters already cached locally will be **skipped instantly** to minimize bandwidth and request counts. Only missing books of <strong>{selectedTransObj?.name}</strong> will be fetched.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Warning if AI translation needed but user does not have client API key, though they can still fetch if connected */}
                   {!geminiApiKey && !['web', 'kjv', 'asv', 'bbe', 'ylt', 'darby', 'oeb-us', 'cherokee'].includes(selectedTrans) && (
@@ -573,10 +675,13 @@ export default function OfflineSyncModal({
                   {/* Sync Action Trigger */}
                   <button
                     onClick={handleStartDownload}
-                    className="w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white py-2 px-4 rounded-lg font-medium text-xs transition duration-150 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] cursor-pointer"
+                    className="w-full bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white py-2.5 px-4 rounded-xl font-semibold text-xs transition duration-150 flex items-center justify-center gap-2 shadow-md active:scale-[0.98] cursor-pointer"
                   >
                     <DownloadCloud className="w-4 h-4" />
-                    Download {selectedBookObj?.name} ({selectedTransObj?.short}) for Offline Use
+                    {downloadScope === 'book' 
+                      ? `Download ${selectedBookObj?.name} (${selectedTransObj?.short}) for Offline Use` 
+                      : `Download Entire ${selectedTransObj?.name} (${selectedTransObj?.short}) — 66 Books`
+                    }
                   </button>
                 </div>
               )}

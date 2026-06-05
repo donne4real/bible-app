@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Type, Moon, Sun, Minimize2, Sparkles, Sliders, Key } from 'lucide-react';
+import { Type, Moon, Sun, Minimize2, Sparkles, Sliders, Key, DatabaseBackup, ChevronRight } from 'lucide-react';
 import { ReaderSettings } from '../types';
 
 interface ThemeSelectorProps {
@@ -12,9 +12,10 @@ interface ThemeSelectorProps {
   onUpdateSettings: (updates: Partial<ReaderSettings>) => void;
   isOpen: boolean;
   onClose: () => void;
+  onOpenOfflineSync?: () => void;
 }
 
-export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onClose }: ThemeSelectorProps) {
+export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onClose, onOpenOfflineSync }: ThemeSelectorProps) {
   if (!isOpen) return null;
 
   return (
@@ -32,7 +33,61 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
         </button>
       </div>
 
-      {/* Translations selector */}
+      {/* Direct download entry option */}
+      {onOpenOfflineSync && (
+        <div className="mb-4 pb-3.5 border-b border-zinc-100 dark:border-zinc-800 animate-fade-in">
+          <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">
+            Offline Library
+          </label>
+          <button
+            onClick={onOpenOfflineSync}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-sans font-bold text-xs transition cursor-pointer"
+          >
+            <span className="flex items-center gap-1.5">
+              <DatabaseBackup className="w-4 h-4 text-amber-500 shrink-0" />
+              Download Entire Version
+            </span>
+            <ChevronRight className="w-4 h-4 opacity-70" />
+          </button>
+        </div>
+      )}
+
+      {/* App Connectivity Mode Selector */}
+      <div className="mb-4 pb-3.5 border-b border-zinc-100 dark:border-zinc-800 animate-fade-in">
+        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">
+          App Mode (Connectivity)
+        </label>
+        <div className="grid grid-cols-2 gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
+          <button
+            onClick={() => onUpdateSettings({ offlineOnly: true })}
+            className={`py-1 rounded-md text-[11px] font-semibold transition flex flex-col items-center justify-center cursor-pointer ${
+              settings.offlineOnly !== false 
+                ? 'bg-amber-500 text-white shadow-sm' 
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800'
+            }`}
+          >
+            Offline (100% Local)
+          </button>
+          <button
+            onClick={() => onUpdateSettings({ offlineOnly: false })}
+            className={`py-1 rounded-md text-[11px] font-semibold transition flex flex-col items-center justify-center cursor-pointer ${
+              settings.offlineOnly === false 
+                ? 'bg-amber-500 text-white shadow-sm' 
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800'
+            }`}
+          >
+            Online Cloud (AI)
+          </button>
+        </div>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1.5 leading-tight">
+          {settings.offlineOnly !== false 
+            ? "✓ Runs 100% offline from the local Bible database. No internet data or API keys." 
+            : "⚡ Uses online sources & client-side Gemini translations where available."
+          }
+        </p>
+      </div>
+
+      {/* Typography Font selector */}
       <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">
           Typography Font
@@ -155,23 +210,25 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       </div>
 
       {/* Optional Client-side Gemini API Key Section for Netlify/External deployments */}
-      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-2">
-        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1 mb-1.5">
-          <Key className="w-3.5 h-3.5 text-amber-500" />
-          Gemini API Key (Optional / Netlify)
-        </label>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2 leading-normal">
-          Provide your own key to run beautiful Yoruba, Swahili, and other AI translations directly in-browser on Netlify!
-        </p>
-        <input
-          type="password"
-          id="client-gemini-api-key-input"
-          placeholder="AIzaSy..."
-          value={settings.geminiApiKey || ''}
-          onChange={(e) => onUpdateSettings({ geminiApiKey: e.target.value })}
-          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus:border-amber-500 dark:focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none placeholder-zinc-400 dark:placeholder-zinc-500 transition font-mono"
-        />
-      </div>
+      {settings.offlineOnly === false && (
+        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-2 animate-fade-in">
+          <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1 mb-1.5">
+            <Key className="w-3.5 h-3.5 text-amber-500" />
+            Gemini API Key (Optional / Netlify)
+          </label>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2 leading-normal">
+            Provide your own key to run beautiful Yoruba, Swahili, and other AI translations directly in-browser on Netlify!
+          </p>
+          <input
+            type="password"
+            id="client-gemini-api-key-input"
+            placeholder="AIzaSy..."
+            value={settings.geminiApiKey || ''}
+            onChange={(e) => onUpdateSettings({ geminiApiKey: e.target.value })}
+            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus:border-amber-500 dark:focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none placeholder-zinc-400 dark:placeholder-zinc-500 transition font-mono"
+          />
+        </div>
+      )}
     </div>
   );
 }

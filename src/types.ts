@@ -47,6 +47,7 @@ export interface ReaderSettings {
   zenMode: boolean;
   theme: 'light' | 'sepia' | 'dark' | 'charcoal';
   geminiApiKey?: string;
+  offlineOnly?: boolean;
 }
 
 export interface VerseCardStyle {

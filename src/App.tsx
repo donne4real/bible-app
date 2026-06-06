@@ -44,6 +44,7 @@ const TRANSLATIONS = [
   { id: 'amh', name: 'Amharic Bible',                     short: 'AMH', ntOnly: false },
   { id: 'swa', name: 'Swahili Bible',                     short: 'SWA', ntOnly: false },
   { id: 'sna', name: 'Shona Bible',                       short: 'SNA', ntOnly: true  },
+  { id: 'ewe', name: 'Bibla (Ewe)',                        short: 'EWE', ntOnly: false },
 ];
 
 export default function App() {

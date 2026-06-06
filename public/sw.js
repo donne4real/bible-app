@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wordup-africa-bible-v5';
+const CACHE_NAME = 'wordup-africa-bible-v6';
 
 // App shell — cached on install
 const SHELL_ASSETS = [
@@ -27,6 +27,7 @@ const BIBLE_FILES = [
   '/bibles/swa.json',
   '/bibles/sna.json',
   '/bibles/nde.json',
+  '/bibles/ewe.json',
 ];
 
 self.addEventListener('install', event => {

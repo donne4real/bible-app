@@ -201,4 +201,18 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
     classification: 'National Official Language',
     majorCountries: 'Zimbabwe, South Africa'
   },
+  {
+    id: 'ewe',
+    short: 'EWE',
+    name: 'Ewe',
+    nativeName: 'Bibla',
+    translationName: 'Bibla (Ewe)',
+    abbreviationExplanation: 'EWE — Ewe, a Gbe language of the Gulf of Guinea coast',
+    description: 'Ewe is a Niger-Congo language spoken primarily in Ghana and Togo. The Ewe Bible (Bibla) brings scripture to a community known for its rich oral tradition, complex tonal system, and distinct cultural identity along the Gulf of Guinea coast.',
+    speakers: '7+ Million',
+    family: 'Niger-Congo (Gbe)',
+    region: 'West Africa',
+    classification: 'National Literacy Language',
+    majorCountries: 'Ghana, Togo, Benin'
+  },
 ];

@@ -21,6 +21,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { BIBLE_BOOKS } from './bibleStructure';
+import { getLocalizedBookName } from './bookNames';
 import { getVerses } from './bibleLoader';
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata } from './types';
 import Sidebar from './components/Sidebar';
@@ -33,17 +34,17 @@ import { motion, AnimatePresence } from 'motion/react';
 const TRANSLATIONS = [
   { id: 'web', name: 'World English Bible (WEB)',        short: 'WEB', ntOnly: false },
   { id: 'kjv', name: 'King James Version (KJV)',          short: 'KJV', ntOnly: false },
-  { id: 'lsg', name: 'Louis Segond 1910 (French)',        short: 'LSG', ntOnly: false },
+  { id: 'lsg', name: 'Louis Segond 1910 (French)',        short: 'FRE', ntOnly: false },
   { id: 'yor', name: 'Bibeli Mimo (Yoruba)',               short: 'YOR', ntOnly: false },
-  { id: 'ibo', name: 'Biblia Nso (Igbo)',                  short: 'IBO', ntOnly: false },
+  { id: 'ibo', name: 'Biblia Nso (Igbo)',                  short: 'IGB', ntOnly: false },
   { id: 'hau', name: 'Littafi Mai Tsarki (Hausa)',        short: 'HAU', ntOnly: false },
   { id: 'twi', name: 'Twi Asante Bible',                   short: 'TWI', ntOnly: false },
-  { id: 'pcm', name: 'Nigerian Pidgin Bible',              short: 'PCM', ntOnly: false },
+  { id: 'pcm', name: 'Nigerian Pidgin Bible',              short: 'PID', ntOnly: false },
   { id: 'afr', name: 'Afrikaans Ou Vertaling',             short: 'AFR', ntOnly: false },
   { id: 'nde', name: 'Ndebele Bible',                      short: 'NDE', ntOnly: false },
   { id: 'amh', name: 'Amharic Bible',                     short: 'AMH', ntOnly: false },
   { id: 'swa', name: 'Swahili Bible',                     short: 'SWA', ntOnly: false },
-  { id: 'sna', name: 'Shona Bible',                       short: 'SNA', ntOnly: true  },
+  { id: 'sna', name: 'Shona Bible',                       short: 'SHO', ntOnly: true  },
   { id: 'ewe', name: 'Bibla (Ewe)',                        short: 'EWE', ntOnly: false },
 ];
 
@@ -168,7 +169,7 @@ export default function App() {
           setVerses(result);
         } else {
           setVerses([]);
-          setErrorStatus(`${selectedBook.name} ${selectedChapter} is not available in the ${TRANSLATIONS.find(t => t.id === settings.translation)?.short || settings.translation.toUpperCase()} translation.`);
+          setErrorStatus(`${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter} is not available in the ${TRANSLATIONS.find(t => t.id === settings.translation)?.short || settings.translation.toUpperCase()} translation.`);
         }
       })
       .catch(() => {
@@ -385,7 +386,7 @@ export default function App() {
     const q = activeSearch.trim().toLowerCase();
     if (!q) return { books: [], verses: [], topics: ['faith', 'love', 'grace', 'light', 'salvation', 'wisdom', 'peace', 'joy'], history: searchHistory };
     return {
-      books:   BIBLE_BOOKS.filter(b => b.name.toLowerCase().includes(q) || b.id.toLowerCase().includes(q)).slice(0, 4),
+      books:   BIBLE_BOOKS.filter(b => b.name.toLowerCase().includes(q) || b.id.toLowerCase().includes(q) || getLocalizedBookName(b.id, settings.translation, b.name).toLowerCase().includes(q)).slice(0, 4),
       verses:  verses.filter(v => v.text.toLowerCase().includes(q)).slice(0, 5),
       topics:  [],
       history: searchHistory.filter(h => h.toLowerCase().includes(q) && h.toLowerCase() !== q),
@@ -425,7 +426,7 @@ export default function App() {
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3.5" />
           <p className="text-sm font-semibold mb-2">{activeTrans?.name} is a New Testament translation</p>
           <p className="text-xs opacity-70 max-w-sm mx-auto mb-2 leading-relaxed">
-            <strong>{selectedBook.name}</strong> is an Old Testament book and is not available in this
+            <strong>{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)}</strong> is an Old Testament book and is not available in this
             translation. Navigate to Matthew or later to read in {activeTrans?.short}.
           </p>
           <p className="text-xs opacity-50 max-w-sm mx-auto mb-6">
@@ -499,7 +500,7 @@ export default function App() {
                 onClick={() => { setPickedBook(selectedBook); setPickedChapter(selectedChapter); setShowBookPicker(true); setShowChapterPicker(true); setShowVersePicker(false); }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 font-sans font-bold text-xs bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 uppercase tracking-widest transition"
               >
-                <span>{selectedBook.name} {selectedChapter}</span>
+                <span>{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}</span>
                 <span className="text-[9px] text-zinc-400">▼</span>
               </button>
 
@@ -587,7 +588,7 @@ export default function App() {
                 )}
               </div>
               <h2 className="text-2xl md:text-3xl font-serif font-bold tracking-tight">
-                {selectedBook.name} {selectedChapter}
+                {getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}
               </h2>
             </div>
             {!settings.zenMode && (
@@ -605,7 +606,7 @@ export default function App() {
                 <Search className="w-4 h-4 text-current/50 absolute left-3.5 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder={`Search in ${selectedBook.name} ${selectedChapter}...`}
+                  placeholder={`Search in ${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter}...`}
                   value={activeSearch}
                   onChange={e => { setActiveSearch(e.target.value); setSearchFocused(true); }}
                   onFocus={() => setSearchFocused(true)}
@@ -837,7 +838,7 @@ export default function App() {
               <button onClick={handlePrevChapter} className="flex items-center gap-1.5 py-2 px-3 hover:bg-current/5 rounded-xl transition text-xs font-semibold text-zinc-500">
                 <ChevronLeft className="w-4 h-4" /><span>Prev Chapter</span>
               </button>
-              <div className="text-[10px] uppercase tracking-widest font-bold opacity-60 font-mono">{selectedBook.name} {selectedChapter} / {selectedBook.chapters}</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold opacity-60 font-mono">{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter} / {selectedBook.chapters}</div>
               <button onClick={handleNextChapter} className="flex items-center gap-1.5 py-2 px-3 hover:bg-current/5 rounded-xl transition text-xs font-semibold text-zinc-500">
                 <span>Next Chapter</span><ChevronRight className="w-4 h-4" />
               </button>
@@ -912,7 +913,7 @@ export default function App() {
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {BIBLE_BOOKS.filter(b => b.testament === pickerTab).map(book => (
                     <button key={book.id} onClick={() => handleSelectBookFromMenu(book)} className={`py-2 px-3 rounded-xl border text-left hover:border-amber-500/40 hover:bg-amber-500/5 transition text-xs font-semibold ${selectedBook.id === book.id ? 'border-amber-500 bg-amber-500/10 text-amber-600 font-bold' : 'border-zinc-150 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 bg-zinc-50/50 dark:bg-zinc-850/50'}`}>
-                      <div className="truncate">{book.name}</div>
+                      <div className="truncate">{getLocalizedBookName(book.id, settings.translation, book.name)}</div>
                       <div className="text-[9px] font-mono opacity-50 font-normal">{book.chapters} Ch</div>
                     </button>
                   ))}

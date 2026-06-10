@@ -304,6 +304,33 @@ const BOOK_NAMES_BY_TRANSLATION: Record<string, BookNameMap> = {
     REV: 'IsAmbulo',
   },
 
+  // ── Haitian Creole (HTC) — Bib La ─────────────────────────────────
+  htc: {
+    GEN: 'Jenèz',             EXO: 'Egzòd',            LEV: 'Levitik',
+    NUM: 'Nonm',               DEU: 'Detewonòm',        JOS: 'Jozye',
+    JDG: 'Jij',                RUT: 'Rit',              '1SA': '1 Samyèl',
+    '2SA': '2 Samyèl',         '1KI': '1 Rwa',          '2KI': '2 Rwa',
+    '1CH': '1 Kwonik',         '2CH': '2 Kwonik',       EZR: 'Esdras',
+    NEH: 'Neyemi',             EST: 'Estè',             JOB: 'Jòb',
+    PSA: 'Sòm',                PRO: 'Pwovèb',           ECC: 'Eklezyas',
+    SNG: 'Kantik Kantik yo',   ISA: 'Ezayi',            JER: 'Jeremi',
+    LAM: 'Lamentasyon',        EZK: 'Ezekyèl',          DAN: 'Danyèl',
+    HOS: 'Ozye',               JOL: 'Jowèl',            AMO: 'Amos',
+    OBD: 'Abdyas',             JON: 'Jonas',            MIC: 'Miche',
+    NAM: 'Nawoum',             HAB: 'Abakik',           ZEP: 'Sofoni',
+    HAG: 'Age',                ZEC: 'Zakari',           MAL: 'Malachi',
+    MAT: 'Matye',              MRK: 'Mak',              LUK: 'Lik',
+    JHN: 'Jan',                ACT: 'Travay',           ROM: 'Women',
+    '1CO': '1 Korentyen',      '2CO': '2 Korentyen',    GAL: 'Galat',
+    EPH: 'Efezyen',            PHP: 'Filipyen',         COL: 'Kolosyen',
+    '1TH': '1 Tesalonisyen',   '2TH': '2 Tesalonisyen',
+    '1TI': '1 Timote',         '2TI': '2 Timote',       TIT: 'Tit',
+    PHM: 'Filemòn',            HEB: 'Ebre',             JAS: 'Jak',
+    '1PE': '1 Pyè',            '2PE': '2 Pyè',          '1JN': '1 Jan',
+    '2JN': '2 Jan',            '3JN': '3 Jan',          JUD: 'Jid',
+    REV: 'Revelasyon',
+  },
+
   // ── Ewe (EWE) — Bibla ──────────────────────────────────────────────
   ewe: {
     GEN: 'Dziɖoɖowo',       EXO: 'Exodo',            LEV: 'Levitiku',

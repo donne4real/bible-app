@@ -202,6 +202,20 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
     majorCountries: 'Zimbabwe, South Africa'
   },
   {
+    id: 'htc',
+    short: 'HTC',
+    name: 'Haitian Creole',
+    nativeName: 'Bib La',
+    translationName: 'Bib La (Kreyòl Ayisyen)',
+    abbreviationExplanation: 'HTC — Haitian Creole, official language of Haiti',
+    description: 'Haitian Creole (Kreyòl Ayisyen) is the native tongue of virtually all Haitians and one of Haiti\'s two official languages. Bib La (1985) is the standard Protestant Bible in Haitian Creole, published without copyright and now in the public domain.',
+    speakers: '12+ Million',
+    family: 'French-based Creole',
+    region: 'Caribbean / Haitian Diaspora',
+    classification: 'National Official Language',
+    majorCountries: 'Haiti, United States, Canada, France, Dominican Republic'
+  },
+  {
     id: 'ewe',
     short: 'EWE',
     name: 'Ewe',

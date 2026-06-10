@@ -208,6 +208,9 @@ const TRANSLATIONS = [
   { appId: 'swa', source: 'getbible', id: 'swahili',    name: 'Swahili Bible (NT)' },
   { appId: 'sna', source: 'getbible', id: 'shona',      name: 'Shona Bible (NT)' },
   { appId: 'nde', source: 'getbible', id: 'ndebele',    name: 'Ndebele Bible' },
+  // Haitian Creole — public domain (published 1985 without copyright notice)
+  // eBible uses 'NAM' for Nahum; remap to 'NAH' to match other JSON files.
+  { appId: 'htc', source: 'ebible',   id: 'hat',        name: 'Haitian Creole Bible (Bib La)' },
 ];
 
 async function main() {

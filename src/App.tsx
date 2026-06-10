@@ -46,6 +46,7 @@ const TRANSLATIONS = [
   { id: 'swa', name: 'Swahili Bible',                     short: 'SWA', ntOnly: false },
   { id: 'sna', name: 'Shona Bible',                       short: 'SHO', ntOnly: true  },
   { id: 'ewe', name: 'Bibla (Ewe)',                        short: 'EWE', ntOnly: false },
+  { id: 'htc', name: 'Bib La (Kreyòl Ayisyen)',           short: 'HTC', ntOnly: false },
 ];
 
 export default function App() {

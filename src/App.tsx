@@ -502,7 +502,7 @@ export default function App() {
               </button>
               <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { setSelectedBook(BIBLE_BOOKS[0]); setSelectedChapter(1); }}>
                 <BookOpen className="w-5 h-5 text-amber-500" />
-                <h1 className="font-sans font-bold tracking-tight text-xs sm:text-sm bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
+                <h1 className="hidden sm:block font-sans font-bold tracking-tight text-xs sm:text-sm bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
                   WordUp Africa Bible Reader
                 </h1>
               </div>
@@ -539,7 +539,7 @@ export default function App() {
                   className="p-1 px-2 rounded-full bg-amber-500/10 dark:bg-amber-400/5 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-sans font-semibold transition cursor-pointer"
                   title="Translation guide"
                 >
-                  <span className="text-[9px]">ℹ</span> Langs
+                  <span className="text-[9px]">ℹ</span><span className="hidden sm:inline"> Langs</span>
                 </button>
 
                 <button
@@ -548,14 +548,14 @@ export default function App() {
                   title="Compare translations"
                 >
                   <Columns className="w-3 h-3" />
-                  <span>{isComparing ? 'Comparing' : 'Compare'}</span>
+                  <span className="hidden sm:inline">{isComparing ? 'Comparing' : 'Compare'}</span>
                 </button>
               </div>
             </div>
 
             {/* Right: controls */}
             <div className="flex items-center gap-1 relative">
-              <button onClick={() => handleUpdateSettings({ zenMode: true })} className="p-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="Zen mode">
+              <button onClick={() => handleUpdateSettings({ zenMode: true })} className="hidden sm:flex p-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="Zen mode">
                 <Eye className="w-5 h-5" />
               </button>
               <button
@@ -915,7 +915,7 @@ export default function App() {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-150 dark:border-zinc-800 text-xs text-zinc-500 bg-zinc-50/50 dark:bg-zinc-950/50 font-sans select-none shrink-0">
               <button onClick={() => { setShowChapterPicker(false); setShowVersePicker(false); }} className={`font-semibold hover:text-amber-600 transition ${!showChapterPicker && !showVersePicker ? 'text-amber-600 font-bold underline decoration-2 underline-offset-4' : ''}`}>
-                1. Book {pickedBook ? `(${pickedBook.name})` : ''}
+                1. Book {pickedBook ? `(${getLocalizedBookName(pickedBook.id, settings.translation, pickedBook.name)})` : ''}
               </button>
               <span className="opacity-40">/</span>
               <button disabled={!pickedBook} onClick={() => { setShowChapterPicker(true); setShowVersePicker(false); }} className={`font-semibold hover:text-amber-600 transition disabled:opacity-40 disabled:pointer-events-none ${showChapterPicker ? 'text-amber-600 font-bold underline decoration-2 underline-offset-4' : ''}`}>
@@ -950,7 +950,7 @@ export default function App() {
             {showChapterPicker && !showVersePicker && pickedBook && (
               <div className="flex-1 overflow-y-auto p-6">
                 <button onClick={() => { setShowChapterPicker(false); setShowVersePicker(false); }} className="mb-4 text-xs font-bold text-amber-600 flex items-center gap-1 hover:underline">← Back to Books</button>
-                <h4 className="font-serif font-bold text-lg text-zinc-800 dark:text-zinc-100 mb-4 border-b pb-2">{pickedBook.name} Chapters</h4>
+                <h4 className="font-serif font-bold text-lg text-zinc-800 dark:text-zinc-100 mb-4 border-b pb-2">{getLocalizedBookName(pickedBook.id, settings.translation, pickedBook.name)} Chapters</h4>
                 <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
                   {Array.from({ length: pickedBook.chapters }, (_, i) => i + 1).map(num => (
                     <button key={num} onClick={() => handleSelectChapterFromMenu(num)} className={`aspect-square w-full rounded-full border font-mono text-xs font-bold flex items-center justify-center transition hover:border-amber-500 hover:bg-amber-500/10 ${selectedBook.id === pickedBook.id && selectedChapter === num ? 'bg-amber-500 text-zinc-950 font-black border-amber-500' : 'border-zinc-150 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-850'}`}>{num}</button>
@@ -963,7 +963,7 @@ export default function App() {
             {showVersePicker && pickedBook && pickedChapter !== null && (
               <div className="flex-1 overflow-y-auto p-6 flex flex-col">
                 <button onClick={() => { setShowVersePicker(false); setShowChapterPicker(true); }} className="mb-4 text-xs font-bold text-amber-600 flex items-center gap-1 hover:underline self-start">← Back to Chapters</button>
-                <h4 className="font-serif font-bold text-lg text-zinc-800 dark:text-zinc-100 mb-4 border-b pb-2">{pickedBook.name} {pickedChapter}: Select Verse</h4>
+                <h4 className="font-serif font-bold text-lg text-zinc-800 dark:text-zinc-100 mb-4 border-b pb-2">{getLocalizedBookName(pickedBook.id, settings.translation, pickedBook.name)} {pickedChapter}: Select Verse</h4>
                 <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
                   {Array.from({ length: availableVerses }, (_, i) => i + 1).map(num => (
                     <button key={num} onClick={() => handleSelectVerseFromMenu(num)} className="aspect-square w-full rounded-full border border-zinc-150 dark:border-zinc-800 font-mono text-xs font-bold flex items-center justify-center transition hover:border-amber-500 hover:bg-amber-500/10 text-zinc-800 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-850">{num}</button>

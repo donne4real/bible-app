@@ -49,6 +49,60 @@ const TRANSLATIONS = [
   { id: 'htc', name: 'Bib La (Kreyòl Ayisyen)',           short: 'HTC', ntOnly: false },
 ];
 
+interface ErrorStateProps {
+  isNtOnlyError: boolean;
+  transName: string | undefined;
+  transShort: string | undefined;
+  bookName: string;
+  errorStatus: string | null;
+  onJumpToMatthew: () => void;
+  onSwitchToWeb: () => void;
+  onSwitchToKJV: () => void;
+}
+
+function ErrorState({ isNtOnlyError, transName, transShort, bookName, errorStatus, onJumpToMatthew, onSwitchToWeb, onSwitchToKJV }: ErrorStateProps) {
+  if (isNtOnlyError) {
+    return (
+      <div className="text-center py-10">
+        <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3.5" />
+        <p className="text-sm font-semibold mb-2">{transName} is a New Testament translation</p>
+        <p className="text-xs opacity-70 max-w-sm mx-auto mb-2 leading-relaxed">
+          <strong>{bookName}</strong> is an Old Testament book and is not available in this
+          translation. Navigate to Matthew or later to read in {transShort}.
+        </p>
+        <p className="text-xs opacity-50 max-w-sm mx-auto mb-6">
+          For the full Old Testament, switch to WEB, KJV, or another complete translation.
+        </p>
+        <div className="flex flex-col gap-2 max-w-xs mx-auto">
+          <button
+            onClick={onJumpToMatthew}
+            className="py-2.5 px-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer text-amber-700 dark:text-amber-400"
+          >
+            Jump to Matthew 1 ({transShort})
+          </button>
+          <button
+            onClick={onSwitchToWeb}
+            className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer"
+          >
+            Switch to WEB (Full Bible)
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="text-center py-10">
+      <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3.5" />
+      <p className="text-sm font-semibold mb-2">{errorStatus}</p>
+      <p className="text-xs opacity-60 max-w-sm mx-auto mb-6">Try a different translation using the selector above.</p>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        <button onClick={onSwitchToWeb} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to WEB</button>
+        <button onClick={onSwitchToKJV} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to KJV</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   // --- Navigation state (persisted) ---
   const [selectedBook, setSelectedBook] = useState<BookMetadata>(() => {
@@ -124,8 +178,9 @@ export default function App() {
   });
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const headerRef          = useRef<HTMLDivElement>(null);
+  const searchContainerRef   = useRef<HTMLDivElement>(null);
+  const headerRef            = useRef<HTMLDivElement>(null);
+  const pickerSelectionRef   = useRef<string>('');
 
   // ── Persist navigation ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -170,7 +225,7 @@ export default function App() {
           setVerses(result);
         } else {
           setVerses([]);
-          setErrorStatus(`${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter} is not available in the ${TRANSLATIONS.find(t => t.id === settings.translation)?.short || settings.translation.toUpperCase()} translation.`);
+          setErrorStatus(`${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter} is not available in the ${activeTrans?.short || settings.translation.toUpperCase()} translation.`);
         }
       })
       .catch(() => {
@@ -274,16 +329,16 @@ export default function App() {
   const handleSelectChapterFromMenu = async (chapterNum: number) => {
     if (!pickedBook) return;
     const snapshotBook = pickedBook; // capture before any state update
+    const selectionKey = `${snapshotBook.id}_${chapterNum}`;
+    pickerSelectionRef.current = selectionKey;
     setPickedChapter(chapterNum);
     setShowChapterPicker(false);
     setShowVersePicker(true);
-    // Determine verse count; guard against rapid chapter clicks racing
     const result = await getVerses(settings.translation, snapshotBook.id, snapshotBook.name, chapterNum);
-    // Only apply if the picker hasn't moved on to a different chapter
-    setPickedChapter(prev => {
-      if (prev === chapterNum) setAvailableVerses(result ? result.length : 30);
-      return prev;
-    });
+    // Only apply if the user hasn't navigated to a different book+chapter since this fetch started
+    if (pickerSelectionRef.current === selectionKey) {
+      setAvailableVerses(result ? result.length : 30);
+    }
   };
 
   const handleSelectVerseFromMenu = (verseNum: number) => {
@@ -420,48 +475,6 @@ export default function App() {
   const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
   const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
 
-  function ErrorState() {
-    if (isNtOnlyError) {
-      return (
-        <div className="text-center py-10">
-          <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3.5" />
-          <p className="text-sm font-semibold mb-2">{activeTrans?.name} is a New Testament translation</p>
-          <p className="text-xs opacity-70 max-w-sm mx-auto mb-2 leading-relaxed">
-            <strong>{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)}</strong> is an Old Testament book and is not available in this
-            translation. Navigate to Matthew or later to read in {activeTrans?.short}.
-          </p>
-          <p className="text-xs opacity-50 max-w-sm mx-auto mb-6">
-            For the full Old Testament, switch to WEB, KJV, or another complete translation.
-          </p>
-          <div className="flex flex-col gap-2 max-w-xs mx-auto">
-            <button
-              onClick={() => { setSelectedBook(BIBLE_BOOKS.find(b => b.id === 'MAT')!); setSelectedChapter(1); }}
-              className="py-2.5 px-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer text-amber-700 dark:text-amber-400"
-            >
-              Jump to Matthew 1 ({activeTrans?.short})
-            </button>
-            <button
-              onClick={() => handleUpdateSettings({ translation: 'web' })}
-              className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer"
-            >
-              Switch to WEB (Full Bible)
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="text-center py-10">
-        <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3.5" />
-        <p className="text-sm font-semibold mb-2">{errorStatus}</p>
-        <p className="text-xs opacity-60 max-w-sm mx-auto mb-6">Try a different translation using the selector above.</p>
-        <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-          <button onClick={() => handleUpdateSettings({ translation: 'web' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to WEB</button>
-          <button onClick={() => handleUpdateSettings({ translation: 'kjv' })} className="py-2.5 px-4 bg-current/5 rounded-xl text-xs font-bold hover:bg-current/10 transition cursor-pointer">Switch to KJV</button>
-        </div>
-      </div>
-    );
-  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -580,9 +593,9 @@ export default function App() {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest opacity-60 font-mono">
-                  {TRANSLATIONS.find(t => t.id === settings.translation)?.name}
+                  {activeTrans?.name}
                 </span>
-                {TRANSLATIONS.find(t => t.id === settings.translation)?.ntOnly && (
+                {activeTrans?.ntOnly && (
                   <span className="text-[9px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 select-none">
                     New Testament Only
                   </span>
@@ -694,7 +707,18 @@ export default function App() {
           )}
 
           {/* Error state */}
-          {!loading && errorStatus && <ErrorState />}
+          {!loading && errorStatus && (
+            <ErrorState
+              isNtOnlyError={!!isNtOnlyError}
+              transName={activeTrans?.name}
+              transShort={activeTrans?.short}
+              bookName={getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)}
+              errorStatus={errorStatus}
+              onJumpToMatthew={() => { setSelectedBook(BIBLE_BOOKS.find(b => b.id === 'MAT')!); setSelectedChapter(1); }}
+              onSwitchToWeb={() => handleUpdateSettings({ translation: 'web' })}
+              onSwitchToKJV={() => handleUpdateSettings({ translation: 'kjv' })}
+            />
+          )}
 
           {/* Verse content */}
           {!loading && !errorStatus && (
@@ -704,7 +728,7 @@ export default function App() {
                 <div className="mb-6 p-4 bg-current/5 border border-current/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-sans">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[9px] font-mono bg-amber-500/15 px-2 py-0.5 rounded-full">Comparison Lens</span>
-                    <span className="font-semibold text-current opacity-80">Compare {TRANSLATIONS.find(t => t.id === settings.translation)?.short} with:</span>
+                    <span className="font-semibold text-current opacity-80">Compare {activeTrans?.short} with:</span>
                     <div className="relative">
                       <select value={compareTranslation} onChange={e => setCompareTranslation(e.target.value)} className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none uppercase tracking-wider text-xs">
                         {TRANSLATIONS.map(t => (
@@ -765,7 +789,7 @@ export default function App() {
                   ) : compareLayout === 'side-by-side' ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 pb-2 border-b border-current/15 uppercase font-mono text-[10px] font-black opacity-65 tracking-widest hidden md:grid select-none">
-                        <div>Primary: {TRANSLATIONS.find(t => t.id === settings.translation)?.name}</div>
+                        <div>Primary: {activeTrans?.name}</div>
                         <div>Comparison: {TRANSLATIONS.find(t => t.id === compareTranslation)?.name}</div>
                       </div>
                       {getFilteredVerses().map(verse => {
@@ -778,7 +802,7 @@ export default function App() {
                         return (
                           <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`grid grid-cols-1 md:grid-cols-2 gap-4 py-3 px-3.5 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
                             <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{TRANSLATIONS.find(t => t.id === settings.translation)?.short}</span></div>
+                              <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{activeTrans?.short}</span></div>
                               <div><sup className="text-[10px] font-sans font-black text-amber-600/80 mr-1.5 select-none">{verse.verse}</sup><span className="font-medium">{verse.text.trim()}</span>{hasNote && <span className="inline-block px-1 ml-1.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans align-middle">✎ NOTE</span>}</div>
                             </div>
                             <div className="space-y-1 border-t md:border-t-0 border-current/10 pt-2.5 md:pt-0 opacity-90">
@@ -813,7 +837,7 @@ export default function App() {
                               {hasNote && <span className="inline-block px-1.5 py-0.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans">✎ Linked Note</span>}
                             </div>
                             <div className="pl-4 border-l-2 border-amber-500/40 py-0.5">
-                              <span className="text-[9px] uppercase font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{TRANSLATIONS.find(t => t.id === settings.translation)?.short}</span>
+                              <span className="text-[9px] uppercase font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{activeTrans?.short}</span>
                               <p className="leading-relaxed text-current font-medium">{verse.text.trim()}</p>
                             </div>
                             <div className="pl-4 border-l-2 border-current/25 py-0.5 opacity-90">

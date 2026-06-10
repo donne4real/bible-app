@@ -27,12 +27,14 @@ async function loadTranslation(translationId: string): Promise<TranslationData |
     return data;
   }
 
-  let data: TranslationData | null = null;
+  let data: TranslationData;
   try {
     const res = await fetch(`/bibles/${translationId}.json`);
-    if (res.ok) data = await res.json();
+    if (!res.ok) return null; // non-200 — do not cache, allow retry
+    data = await res.json();
   } catch {
-    // network error — treat as not available
+    // network error — do not cache so the next attempt retries the fetch
+    return null;
   }
 
   cache.set(translationId, data);

@@ -142,6 +142,10 @@ function parseEBibleChapterText(text) {
   return verses;
 }
 
+// eBible uses 'NAM' for Nahum in ZIP filenames; remap to 'NAH' to match app IDs.
+const EBIBLE_ID_REMAP = { NAM: 'NAH' };
+const EBIBLE_EXTENDED_SET = new Set([...BOOK_IDS, ...Object.keys(EBIBLE_ID_REMAP)]);
+
 async function downloadFromEBible(appId, ebibleCode) {
   console.log(`\n[${appId}] ebible.org "${ebibleCode}"`);
 
@@ -156,10 +160,10 @@ async function downloadFromEBible(appId, ebibleCode) {
   const entries = parseZipEntries(buf);
 
   // Filter to chapter files: pattern {code}_NNN_{BOOKID}_CC_read.txt
-  // We care about entries where BOOKID is one of our 66 book IDs
+  // Use the extended set so eBible-specific codes (e.g. NAM for Nahum) are included.
   const chapterEntries = entries.filter(e => {
     const parts = e.name.replace('_read.txt', '').split('_');
-    return parts.length >= 4 && BOOK_ID_SET.has(parts[parts.length - 2]);
+    return parts.length >= 4 && EBIBLE_EXTENDED_SET.has(parts[parts.length - 2]);
   });
 
   console.log(`  Found ${chapterEntries.length} chapter files`);
@@ -170,8 +174,9 @@ async function downloadFromEBible(appId, ebibleCode) {
   for (const entry of chapterEntries) {
     // Filename: {code}_NNN_{BOOKID}_CC_read.txt
     const nameParts = entry.name.replace('_read.txt', '').split('_');
-    const bookId  = nameParts[nameParts.length - 2];   // e.g. GEN
-    const chNum   = parseInt(nameParts[nameParts.length - 1], 10); // e.g. 01 → 1
+    const rawId  = nameParts[nameParts.length - 2];
+    const bookId = EBIBLE_ID_REMAP[rawId] ?? rawId;   // e.g. NAM → NAH
+    const chNum  = parseInt(nameParts[nameParts.length - 1], 10); // e.g. 01 → 1
 
     try {
       const text = await extractEntry(buf, entry);

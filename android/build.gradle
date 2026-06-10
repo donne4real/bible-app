@@ -22,6 +22,10 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Redirect build outputs outside OneDrive to prevent file-locking on Windows.
+    // Override ANDROID_BUILD_DIR in CI or on other OSes to use a different root.
+    def buildRoot = System.getenv("ANDROID_BUILD_DIR") ?: "C:/AndroidBuild"
+    project.buildDir = new File("${buildRoot}/${rootProject.name}/${project.name}")
 }
 
 task clean(type: Delete) {

@@ -503,7 +503,7 @@ export default function App() {
               <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { setSelectedBook(BIBLE_BOOKS[0]); setSelectedChapter(1); }}>
                 <BookOpen className="w-5 h-5 text-amber-500" />
                 <h1 className="hidden sm:block font-sans font-bold tracking-tight text-xs sm:text-sm bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-                  WordUp Africa Bible Reader
+                  Bible in African Languages
                 </h1>
               </div>
             </div>
@@ -981,7 +981,7 @@ export default function App() {
           <div className="max-w-4xl mx-auto px-4 text-center">
             <div className="flex justify-center items-center gap-1.5 mb-3">
               <BookOpen className="w-4 h-4 text-amber-500" />
-              <span className="text-xs font-sans font-bold uppercase tracking-widest text-amber-700">WordUp Africa Bible Reader</span>
+              <span className="text-xs font-sans font-bold uppercase tracking-widest text-amber-700">Bible in African Languages</span>
             </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed mb-2">
               Free offline Bible in WEB, KJV, French (LSG), Yoruba, Igbo, Hausa, Twi, and Nigerian Pidgin.

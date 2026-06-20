@@ -1,7 +1,7 @@
 {
   "id": "com.wordupafrica.biblereader",
-  "name": "WordUp Africa Bible Reader",
-  "short_name": "WordUp Africa",
+  "name": "Bible in African Languages",
+  "short_name": "Bible Africa",
   "description": "An offline-first, distraction-free Bible reader with highlighting, notes, shareable verse images, and multiple translations.",
   "start_url": "/",
   "display": "standalone",

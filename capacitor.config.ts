@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.wordupafrica.biblereader',
-  appName: 'WordUp Africa Bible Reader',
+  appName: 'Bible in African Languages',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

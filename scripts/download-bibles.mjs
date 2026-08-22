@@ -216,6 +216,11 @@ const TRANSLATIONS = [
   // Haitian Creole — public domain (published 1985 without copyright notice)
   // eBible uses 'NAM' for Nahum; remap to 'NAH' to match other JSON files.
   { appId: 'htc', source: 'ebible',   id: 'hat',        name: 'Haitian Creole Bible (Bib La)' },
+  // English & Arabic additions — all public domain
+  { appId: 'asv', source: 'getbible', id: 'asv',         name: 'American Standard Version' },
+  { appId: 'bbe', source: 'getbible', id: 'basicenglish', name: 'Bible in Basic English' },
+  { appId: 'ylt', source: 'getbible', id: 'ylt',         name: "Young's Literal Translation" },
+  { appId: 'arb', source: 'ebible',   id: 'arb-vd',      name: 'Arabic Bible (Van Dyck)' },
 ];
 
 async function main() {

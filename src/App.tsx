@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { BIBLE_BOOKS } from './bibleStructure';
 import { getLocalizedBookName } from './bookNames';
-import { getVerses } from './bibleLoader';
+import { getVerses, searchWholeBible, matchesSearch, findMatchRange } from './bibleLoader';
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata } from './types';
 import Sidebar from './components/Sidebar';
 import ThemeSelector from './components/ThemeSelector';
@@ -47,6 +47,10 @@ const TRANSLATIONS = [
   { id: 'sna', name: 'Shona Bible',                       short: 'SHO', ntOnly: true  },
   { id: 'ewe', name: 'Bibla (Ewe)',                        short: 'EWE', ntOnly: false },
   { id: 'htc', name: 'Bib La (Kreyòl Ayisyen)',           short: 'HTC', ntOnly: false },
+  { id: 'asv', name: 'American Standard Version (ASV)',   short: 'ASV', ntOnly: false },
+  { id: 'bbe', name: 'Bible in Basic English (BBE)',      short: 'BBE', ntOnly: false },
+  { id: 'ylt', name: "Young's Literal Translation (YLT)", short: 'YLT', ntOnly: false },
+  { id: 'arb', name: 'Arabic Bible — Van Dyck (ARB)',     short: 'ARB', ntOnly: false, dir: 'rtl' as const },
 ];
 
 interface ErrorStateProps {
@@ -178,6 +182,12 @@ export default function App() {
   });
   const [searchFocused, setSearchFocused] = useState(false);
 
+  // Whole-Bible search
+  const [wholeBibleQuery, setWholeBibleQuery]     = useState<string | null>(null);
+  const [wholeBibleResults, setWholeBibleResults] = useState<Verse[]>([]);
+  const [wholeBibleTotal, setWholeBibleTotal]     = useState(0);
+  const [wholeBibleLoading, setWholeBibleLoading] = useState(false);
+
   const searchContainerRef   = useRef<HTMLDivElement>(null);
   const headerRef            = useRef<HTMLDivElement>(null);
   const pickerSelectionRef   = useRef<string>('');
@@ -292,6 +302,29 @@ export default function App() {
       if (idx < BIBLE_BOOKS.length - 1) { const next = BIBLE_BOOKS[idx + 1]; setSelectedBook(next); setSelectedChapter(1); }
     }
   }, [selectedBook, selectedChapter]);
+
+  const bookIndex = BIBLE_BOOKS.findIndex(b => b.id === selectedBook.id);
+  const canGoPrev = selectedChapter > 1 || bookIndex > 0;
+  const canGoNext = selectedChapter < selectedBook.chapters || bookIndex < BIBLE_BOOKS.length - 1;
+
+  // ── Swipe navigation (mobile) ───────────────────────────────────────────────
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleReaderTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleReaderTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // Require a mostly-horizontal, deliberate swipe so vertical scrolling and taps are untouched.
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) handleNextChapter(); else handlePrevChapter();
+    }
+  };
 
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -443,7 +476,7 @@ export default function App() {
     if (!q) return { books: [], verses: [], topics: ['faith', 'love', 'grace', 'light', 'salvation', 'wisdom', 'peace', 'joy'], history: searchHistory };
     return {
       books:   BIBLE_BOOKS.filter(b => b.name.toLowerCase().includes(q) || b.id.toLowerCase().includes(q) || getLocalizedBookName(b.id, settings.translation, b.name).toLowerCase().includes(q)).slice(0, 4),
-      verses:  verses.filter(v => v.text.toLowerCase().includes(q)).slice(0, 5),
+      verses:  verses.filter(v => matchesSearch(v.text, q)).slice(0, 5),
       topics:  [],
       history: searchHistory.filter(h => h.toLowerCase().includes(q) && h.toLowerCase() !== q),
     };
@@ -451,7 +484,35 @@ export default function App() {
 
   const getFilteredVerses = () => {
     if (!activeSearch.trim()) return verses;
-    return verses.filter(v => v.text.toLowerCase().includes(activeSearch.toLowerCase()));
+    return verses.filter(v => matchesSearch(v.text, activeSearch));
+  };
+
+  // ── Whole-Bible search ──────────────────────────────────────────────────────
+  const handleWholeBibleSearch = async (query: string) => {
+    const q = query.trim();
+    if (!q) return;
+    if (!searchHistory.includes(q)) setSearchHistory(prev => [q, ...prev].slice(0, 8));
+    setSearchFocused(false);
+    setWholeBibleQuery(q);
+    setWholeBibleLoading(true);
+    const localizedBooks = BIBLE_BOOKS.map(b => ({ id: b.id, name: getLocalizedBookName(b.id, settings.translation, b.name) }));
+    const result = await searchWholeBible(settings.translation, q, localizedBooks);
+    setWholeBibleResults(result?.results ?? []);
+    setWholeBibleTotal(result?.total ?? 0);
+    setWholeBibleLoading(false);
+  };
+
+  const handleJumpToResult = (v: Verse) => {
+    const book = BIBLE_BOOKS.find(b => b.id === v.book_id);
+    if (book) setSelectedBook(book);
+    setSelectedChapter(v.chapter);
+    setWholeBibleQuery(null);
+    setActiveSearch('');
+    setSearchFocused(false);
+    // Chapter content loads async — wait for it to render before scrolling to the verse.
+    setTimeout(() => {
+      document.getElementById(`verse-line-${v.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 350);
   };
 
   // ── Theme helpers ───────────────────────────────────────────────────────────
@@ -474,6 +535,9 @@ export default function App() {
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
   const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
+  const getTransDir = (id: string): 'rtl' | 'ltr' => TRANSLATIONS.find(t => t.id === id)?.dir === 'rtl' ? 'rtl' : 'ltr';
+  const primaryDir = getTransDir(settings.translation);
+  const compareDir = getTransDir(compareTranslation);
 
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -496,7 +560,7 @@ export default function App() {
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
 
             {/* Left: menu + brand */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button onClick={() => setShowSidebar(true)} className="p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition" title="Study Hub">
                 <Menu className="w-5 h-5" />
               </button>
@@ -509,21 +573,21 @@ export default function App() {
             </div>
 
             {/* Center: navigation + translation pickers */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 justify-center">
               <button
                 onClick={() => { setPickedBook(selectedBook); setPickedChapter(selectedChapter); setShowBookPicker(true); setShowChapterPicker(true); setShowVersePicker(false); }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 font-sans font-bold text-xs bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 uppercase tracking-widest transition"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 font-sans font-bold text-xs bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 uppercase tracking-normal sm:tracking-widest transition min-w-0 shrink"
               >
-                <span>{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}</span>
-                <span className="text-[9px] text-zinc-400">▼</span>
+                <span className="whitespace-nowrap truncate max-w-[22vw] sm:max-w-none">{getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}</span>
+                <span className="text-[9px] text-zinc-400 shrink-0">▼</span>
               </button>
 
-              <div className="relative flex items-center gap-1.5">
-                <div className="relative flex items-center">
+              <div className="relative flex items-center gap-1 sm:gap-1.5 shrink-0">
+                <div className="relative flex items-center shrink-0">
                   <select
                     value={settings.translation}
                     onChange={e => handleUpdateSettings({ translation: e.target.value })}
-                    className="appearance-none font-sans font-bold text-[10px] pl-3 pr-7 py-1.5 bg-amber-500/10 dark:bg-amber-400/5 text-amber-600 dark:text-amber-400 border-0 rounded-full hover:bg-amber-500/15 cursor-pointer outline-none uppercase tracking-wider"
+                    className="appearance-none font-sans font-bold text-[10px] pl-2.5 sm:pl-3 pr-6 sm:pr-7 py-1.5 bg-amber-500/10 dark:bg-amber-400/5 text-amber-600 dark:text-amber-400 border-0 rounded-full hover:bg-amber-500/15 cursor-pointer outline-none uppercase tracking-wider max-w-[18vw] sm:max-w-none"
                   >
                     {TRANSLATIONS.map(t => (
                       <option key={t.id} value={t.id} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">
@@ -531,12 +595,12 @@ export default function App() {
                       </option>
                     ))}
                   </select>
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[8px] text-amber-600 dark:text-amber-400 pointer-events-none">▼</span>
+                  <span className="absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 text-[8px] text-amber-600 dark:text-amber-400 pointer-events-none">▼</span>
                 </div>
 
                 <button
                   onClick={() => setShowLanguagesList(true)}
-                  className="p-1 px-2 rounded-full bg-amber-500/10 dark:bg-amber-400/5 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-sans font-semibold transition cursor-pointer"
+                  className="shrink-0 p-1 px-2 rounded-full bg-amber-500/10 dark:bg-amber-400/5 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-sans font-semibold transition cursor-pointer"
                   title="Translation guide"
                 >
                   <span className="text-[9px]">ℹ</span><span className="hidden sm:inline"> Langs</span>
@@ -544,7 +608,7 @@ export default function App() {
 
                 <button
                   onClick={() => setIsComparing(!isComparing)}
-                  className={`p-1 px-2.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer ${isComparing ? 'bg-amber-500 text-zinc-950 shadow-sm' : 'bg-amber-500/10 dark:bg-amber-400/5 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400'}`}
+                  className={`shrink-0 p-1 px-2 sm:px-2.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider transition flex items-center gap-1 cursor-pointer ${isComparing ? 'bg-amber-500 text-zinc-950 shadow-sm' : 'bg-amber-500/10 dark:bg-amber-400/5 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400'}`}
                   title="Compare translations"
                 >
                   <Columns className="w-3 h-3" />
@@ -554,13 +618,10 @@ export default function App() {
             </div>
 
             {/* Right: controls */}
-            <div className="flex items-center gap-1 relative">
-              <button onClick={() => handleUpdateSettings({ zenMode: true })} className="hidden sm:flex p-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="Zen mode">
-                <Eye className="w-5 h-5" />
-              </button>
+            <div className="flex items-center gap-1 relative shrink-0">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className={`p-2 rounded-xl transition ${showSettings ? 'bg-amber-500/15 text-amber-600' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                className={`shrink-0 p-2 rounded-xl transition ${showSettings ? 'bg-amber-500/15 text-amber-600' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 title="Display settings"
               >
                 <SlidersHorizontal className="w-[18px] h-[18px]" />
@@ -585,7 +646,11 @@ export default function App() {
       />
 
       {/* Main content */}
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 my-6 md:my-10 relative">
+      <main
+        className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 my-6 md:my-10 relative"
+        onTouchStart={handleReaderTouchStart}
+        onTouchEnd={handleReaderTouchEnd}
+      >
         <div className={`rounded-3xl p-6 sm:p-9 md:p-11 shadow-lg transition-colors border ${getThemeContainerClass()} ${settings.zenMode ? 'my-2 md:my-6 rounded-2xl' : ''}`}>
 
           {/* Chapter header */}
@@ -636,11 +701,21 @@ export default function App() {
                 <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl z-40 max-h-[45vh] overflow-y-auto text-xs text-zinc-700 dark:text-zinc-200 p-2 space-y-4">
                   {(() => {
                     const data = getAutocompleteSuggestions();
-                    if (!data.books.length && !data.verses.length && !data.topics.length && !data.history.length) {
+                    const q = activeSearch.trim();
+                    if (!q && !data.books.length && !data.verses.length && !data.topics.length && !data.history.length) {
                       return <div className="text-center py-5 opacity-60 italic font-mono text-[10px]">No matches. Press Enter to search.</div>;
                     }
                     return (
                       <div className="space-y-3.5">
+                        {q && (
+                          <button
+                            onClick={() => handleWholeBibleSearch(q)}
+                            className="w-full flex items-center gap-1.5 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition text-left cursor-pointer font-bold text-amber-700 dark:text-amber-400"
+                          >
+                            <Search className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">Search whole Bible for &ldquo;{q}&rdquo;</span>
+                          </button>
+                        )}
                         {data.books.length > 0 && (
                           <div>
                             <div className="px-2 pb-1.5 text-[9px] font-mono font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 select-none">Go to Book</div>
@@ -697,8 +772,69 @@ export default function App() {
             </div>
           )}
 
+          {/* Whole-Bible search results */}
+          {wholeBibleQuery !== null && (
+            <div>
+              <div className="flex items-center justify-between pb-4 mb-2 border-b border-current/15">
+                <div>
+                  <div className="text-[10px] uppercase font-bold tracking-widest opacity-60 font-mono mb-1">Whole Bible Search</div>
+                  <h2 className="text-lg font-serif font-bold">
+                    &ldquo;{wholeBibleQuery}&rdquo;
+                    <span className="text-xs font-sans font-normal opacity-60 ml-2">
+                      {wholeBibleLoading ? 'searching…' : `${wholeBibleTotal} ${wholeBibleTotal === 1 ? 'match' : 'matches'}`}
+                    </span>
+                  </h2>
+                </div>
+                <button onClick={() => setWholeBibleQuery(null)} className="p-2 rounded-xl hover:bg-current/10 transition text-xs font-bold flex items-center gap-1">
+                  <span>✕</span><span className="hidden sm:inline">Close</span>
+                </button>
+              </div>
+
+              {wholeBibleLoading ? (
+                <div className="space-y-4 py-8 animate-pulse">
+                  {[0.67, 0.8, 0.75, 0.92, 0.83].map((w, i) => (
+                    <div key={i} className="h-4 bg-current/10 rounded-full" style={{ width: `${w * 100}%` }} />
+                  ))}
+                </div>
+              ) : wholeBibleResults.length === 0 ? (
+                <div className="text-center py-12 opacity-60 text-xs">No verses found for &ldquo;{wholeBibleQuery}&rdquo; in {activeTrans?.short}.</div>
+              ) : (
+                <div className="space-y-1.5 py-2">
+                  {wholeBibleResults.map((v, i) => {
+                    const range = findMatchRange(v.text, wholeBibleQuery);
+                    return (
+                      <button
+                        key={`${v.book_id}_${v.chapter}_${v.verse}_${i}`}
+                        onClick={() => handleJumpToResult(v)}
+                        className={`w-full p-3 rounded-xl bg-current/[0.03] hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}
+                      >
+                        <div className="text-[10px] font-mono font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1">
+                          {v.book_name} {v.chapter}:{v.verse}
+                        </div>
+                        <p dir={primaryDir} className="text-sm leading-snug line-clamp-2">
+                          {!range ? v.text.trim() : (
+                            <>
+                              {v.text.slice(0, range[0])}
+                              <mark className="bg-amber-300/60 dark:bg-amber-500/40 text-current rounded px-0.5">{v.text.slice(range[0], range[1])}</mark>
+                              {v.text.slice(range[1])}
+                            </>
+                          )}
+                        </p>
+                      </button>
+                    );
+                  })}
+                  {wholeBibleTotal > wholeBibleResults.length && (
+                    <div className="text-center py-4 text-[10px] uppercase tracking-wider font-mono opacity-50">
+                      Showing first {wholeBibleResults.length} of {wholeBibleTotal} matches — refine your search for more precise results
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Loading skeleton */}
-          {loading && (
+          {loading && !wholeBibleQuery && (
             <div className="space-y-4 py-8 animate-pulse">
               {[0.67, 0.8, 0.75, 0.92, 0.83].map((w, i) => (
                 <div key={i} className="h-4 bg-current/10 rounded-full" style={{ width: `${w * 100}%` }} />
@@ -707,7 +843,7 @@ export default function App() {
           )}
 
           {/* Error state */}
-          {!loading && errorStatus && (
+          {!loading && errorStatus && !wholeBibleQuery && (
             <ErrorState
               isNtOnlyError={!!isNtOnlyError}
               transName={activeTrans?.name}
@@ -721,7 +857,7 @@ export default function App() {
           )}
 
           {/* Verse content */}
-          {!loading && !errorStatus && (
+          {!loading && !errorStatus && !wholeBibleQuery && (
             <div>
               {/* Comparison controls */}
               {isComparing && (
@@ -754,7 +890,7 @@ export default function App() {
 
               {/* Verse display — single column */}
               {!isComparing && (
-                <div className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} ${getLineHeightClass()} text-left`}>
+                <div dir={primaryDir} className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} ${getLineHeightClass()} ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
                   {getFilteredVerses().length === 0 ? (
                     <div className="text-center py-10 opacity-60 text-xs">No verses matching "{activeSearch}".</div>
                   ) : (
@@ -769,10 +905,10 @@ export default function App() {
                           key={verse.verse}
                           id={`verse-line-${verse.verse}`}
                           onClick={() => handleToggleVerseSelection(verse)}
-                          className={`inline-block mr-1 rounded-md cursor-pointer hover:bg-amber-500/10 transition-all ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}
+                          className={`inline-block ${primaryDir === 'rtl' ? 'ml-1' : 'mr-1'} rounded-md cursor-pointer hover:bg-amber-500/10 transition-all ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}
                         >
-                          <sup className="text-[10px] font-sans font-bold text-amber-600/80 mr-1 select-none">{verse.verse}</sup>
-                          <span className="font-medium mr-1.5 selection:bg-amber-100">{verse.text.trim()}</span>
+                          <sup className={`text-[10px] font-sans font-bold text-amber-600/80 ${primaryDir === 'rtl' ? 'ml-1' : 'mr-1'} select-none`}>{verse.verse}</sup>
+                          <span className={`font-medium ${primaryDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} selection:bg-amber-100`}>{verse.text.trim()}</span>
                           {hasNote && <span className="inline-block px-1 ml-0.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans align-middle">✎ NOTE</span>}
                         </span>
                       );
@@ -801,13 +937,13 @@ export default function App() {
                         const cmpVerse = compareVerses.find(cv => cv.verse === verse.verse);
                         return (
                           <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`grid grid-cols-1 md:grid-cols-2 gap-4 py-3 px-3.5 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
-                            <div className="space-y-1">
+                            <div dir={primaryDir} className={`space-y-1 ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
                               <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{activeTrans?.short}</span></div>
-                              <div><sup className="text-[10px] font-sans font-black text-amber-600/80 mr-1.5 select-none">{verse.verse}</sup><span className="font-medium">{verse.text.trim()}</span>{hasNote && <span className="inline-block px-1 ml-1.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans align-middle">✎ NOTE</span>}</div>
+                              <div><sup className={`text-[10px] font-sans font-black text-amber-600/80 ${primaryDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} select-none`}>{verse.verse}</sup><span className="font-medium">{verse.text.trim()}</span>{hasNote && <span className="inline-block px-1 ml-1.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans align-middle">✎ NOTE</span>}</div>
                             </div>
-                            <div className="space-y-1 border-t md:border-t-0 border-current/10 pt-2.5 md:pt-0 opacity-90">
+                            <div dir={compareDir} className={`space-y-1 border-t md:border-t-0 border-current/10 pt-2.5 md:pt-0 opacity-90 ${compareDir === 'rtl' ? 'text-right' : 'text-left'}`}>
                               <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{TRANSLATIONS.find(t => t.id === compareTranslation)?.short}</span></div>
-                              <div><sup className="text-[10px] font-sans font-black text-amber-600/80 mr-1.5 select-none">{verse.verse}</sup>
+                              <div><sup className={`text-[10px] font-sans font-black text-amber-600/80 ${compareDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} select-none`}>{verse.verse}</sup>
                                 {compareLoading ? <span className="text-xs opacity-55 animate-pulse font-sans italic">Loading...</span>
                                   : compareError ? <span className="text-xs text-rose-500 font-sans italic">Not available</span>
                                   : cmpVerse ? <span>{cmpVerse.text.trim()}</span>
@@ -838,13 +974,13 @@ export default function App() {
                             </div>
                             <div className="pl-4 border-l-2 border-amber-500/40 py-0.5">
                               <span className="text-[9px] uppercase font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{activeTrans?.short}</span>
-                              <p className="leading-relaxed text-current font-medium">{verse.text.trim()}</p>
+                              <p dir={primaryDir} className={`leading-relaxed text-current font-medium ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>{verse.text.trim()}</p>
                             </div>
                             <div className="pl-4 border-l-2 border-current/25 py-0.5 opacity-90">
                               <span className="text-[9px] uppercase font-mono bg-current/10 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{TRANSLATIONS.find(t => t.id === compareTranslation)?.short}</span>
                               {compareLoading ? <p className="text-xs opacity-55 animate-pulse font-sans italic">Loading translation...</p>
                                 : compareError ? <p className="text-xs text-rose-500 font-sans italic">Not available in this version.</p>
-                                : cmpVerse ? <p className="leading-relaxed">{cmpVerse.text.trim()}</p>
+                                : cmpVerse ? <p dir={compareDir} className={`leading-relaxed ${compareDir === 'rtl' ? 'text-right' : 'text-left'}`}>{cmpVerse.text.trim()}</p>
                                 : <p className="text-xs opacity-40 font-sans italic">Not found</p>}
                             </div>
                           </div>
@@ -858,7 +994,7 @@ export default function App() {
           )}
 
           {/* Navigation controls */}
-          {!settings.zenMode && (
+          {!settings.zenMode && !wholeBibleQuery && (
             <div className="flex items-center justify-between border-t border-current/10 pt-6 mt-8">
               <button onClick={handlePrevChapter} className="flex items-center gap-1.5 py-2 px-3 hover:bg-current/5 rounded-xl transition text-xs font-semibold text-zinc-500">
                 <ChevronLeft className="w-4 h-4" /><span>Prev Chapter</span>
@@ -884,6 +1020,28 @@ export default function App() {
         isBookmarked={isCurrentChapterBookmarked()}
         onToggleBookmark={handleToggleBookmark}
       />
+
+      {/* Floating chapter navigation — reachable without scrolling, hidden while another overlay/toolbar is in use */}
+      {selectedVerses.length === 0 && !showShareCard && !showLanguagesList && !showBookPicker && !wholeBibleQuery && (
+        <>
+          <button
+            onClick={handlePrevChapter}
+            disabled={!canGoPrev}
+            className="fixed left-3 sm:left-5 bottom-6 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-lg flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white dark:hover:bg-zinc-900 active:scale-90 transition disabled:opacity-0 disabled:pointer-events-none"
+            title="Previous chapter"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleNextChapter}
+            disabled={!canGoNext}
+            className="fixed right-3 sm:right-5 bottom-6 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur border border-zinc-200 dark:border-zinc-800 shadow-lg flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white dark:hover:bg-zinc-900 active:scale-90 transition disabled:opacity-0 disabled:pointer-events-none"
+            title="Next chapter"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
 
       {/* Share card modal */}
       <ShareCardModal isOpen={showShareCard} onClose={() => setShowShareCard(false)} selectedVerses={selectedVerses} translation={settings.translation} />

@@ -16,6 +16,7 @@ export interface LanguageInfo {
   region: string;
   classification: string;
   majorCountries: string;
+  direction?: 'ltr' | 'rtl';
 }
 
 export const LANGUAGES_REGISTRY: LanguageInfo[] = [
@@ -228,5 +229,62 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
     region: 'West Africa',
     classification: 'National Literacy Language',
     majorCountries: 'Ghana, Togo, Benin'
+  },
+  {
+    id: 'asv',
+    short: 'ASV',
+    name: 'American Standard Version',
+    nativeName: 'American Standard Version',
+    translationName: 'American Standard Version (ASV)',
+    abbreviationExplanation: 'ASV — American Standard Version of 1901',
+    description: 'A highly literal 1901 revision of the King James Version by American scholars. Prized for its word-for-word accuracy and served as the basis for later translations including the WEB.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Historic Literal Standard',
+    majorCountries: 'United States, Worldwide'
+  },
+  {
+    id: 'bbe',
+    short: 'BBE',
+    name: 'Bible in Basic English',
+    nativeName: 'Bible in Basic English',
+    translationName: 'Bible in Basic English (BBE)',
+    abbreviationExplanation: 'BBE — Simplified 850-word Basic English vocabulary',
+    description: 'Published in 1949 using a restricted vocabulary of about 1,000 common English words. Especially accessible to readers using English as a second or additional language.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Simplified Reading Standard',
+    majorCountries: 'Worldwide, ESL readers'
+  },
+  {
+    id: 'ylt',
+    short: 'YLT',
+    name: "Young's Literal Translation",
+    nativeName: "Young's Literal Translation",
+    translationName: "Young's Literal Translation (YLT)",
+    abbreviationExplanation: 'YLT — Ultra-literal word-for-word translation by Robert Young, 1862',
+    description: "An extremely literal, word-for-word translation from the original Hebrew and Greek by Scottish scholar Robert Young. Favored for close textual and word study rather than casual reading.",
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Literal Study Translation',
+    majorCountries: 'Worldwide'
+  },
+  {
+    id: 'arb',
+    short: 'ARB',
+    name: 'Arabic (Van Dyck)',
+    nativeName: 'الكتاب المقدس',
+    translationName: 'Arabic Bible — Van Dyck (ARB)',
+    abbreviationExplanation: 'ARB — Smith & Van Dyck Arabic Translation of 1865',
+    description: 'Translated by Eli Smith and Cornelius Van Dyck with a team of Arab scholars, first published in 1865. The most widely used and historically definitive Arabic Bible translation, still the standard across the Arabic-speaking world today.',
+    speakers: '370+ Million (Arabic)',
+    family: 'Afroasiatic (Semitic)',
+    region: 'North Africa / Middle East',
+    classification: 'Historic Standard Translation',
+    majorCountries: 'Egypt, Sudan, Libya, Tunisia, Algeria, Morocco, and across the Arab world',
+    direction: 'rtl'
   },
 ];

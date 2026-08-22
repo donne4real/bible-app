@@ -63,13 +63,25 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       </div>
 
       {/* Line spacing */}
-      <div className="mb-2">
+      <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-1.5">Line Spacing</label>
         <div className="grid grid-cols-4 gap-1 p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
           {(['tight', 'normal', 'relaxed', 'loose'] as const).map(lh => (
             <button key={lh} onClick={() => onUpdateSettings({ lineHeight: lh })} className={`py-1 rounded text-[11px] font-medium capitalize transition ${settings.lineHeight === lh ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>{lh}</button>
           ))}
         </div>
+      </div>
+
+      {/* Zen mode */}
+      <div>
+        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-1.5">Reading Mode</label>
+        <button
+          onClick={() => { onUpdateSettings({ zenMode: true }); onClose(); }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition text-left"
+        >
+          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">Enter Zen Mode</span>
+          <span className="text-[9px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Distraction-free</span>
+        </button>
       </div>
     </div>
   );

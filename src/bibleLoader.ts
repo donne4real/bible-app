@@ -4,6 +4,47 @@ type ChapterVerses = { verse: number; text: string }[];
 type BookData      = { [chapter: string]: ChapterVerses };
 type TranslationData = { [bookId: string]: BookData };
 
+// Licensed translations (NLT, AMP, NIV) aren't bundled — they're fetched live, per chapter,
+// from a Cloudflare Worker proxy in front of api.bible (see worker/index.ts). This keeps the
+// API key server-side and avoids bulk-redistributing copyrighted text.
+const REMOTE_TRANSLATIONS = new Set(['nlt', 'amp', 'niv']);
+export function isRemoteTranslation(translationId: string): boolean {
+  return REMOTE_TRANSLATIONS.has(translationId);
+}
+
+const MAX_CACHED_CHAPTERS = 100;
+const remoteChapterCache = new Map<string, ChapterVerses | null>();
+
+async function loadRemoteChapter(
+  translationId: string,
+  bookId: string,
+  chapter: number
+): Promise<ChapterVerses | null> {
+  const key = `${translationId}:${bookId}:${chapter}`;
+  if (remoteChapterCache.has(key)) {
+    const data = remoteChapterCache.get(key)!;
+    remoteChapterCache.delete(key);
+    remoteChapterCache.set(key, data);
+    return data;
+  }
+
+  let data: ChapterVerses;
+  try {
+    const res = await fetch(`/api/bible/${translationId}/${bookId}/${chapter}`);
+    if (!res.ok) return null; // not cached — allow retry
+    data = await res.json();
+  } catch {
+    return null; // network error — allow retry
+  }
+
+  remoteChapterCache.set(key, data);
+  while (remoteChapterCache.size > MAX_CACHED_CHAPTERS) {
+    const oldest = remoteChapterCache.keys().next().value;
+    if (oldest !== undefined) remoteChapterCache.delete(oldest);
+  }
+  return data;
+}
+
 // LRU cache capped at MAX_CACHED translations (~4-5 MB each).
 // Evicts the least-recently-used entry when the cap is exceeded so low-end
 // devices never accumulate the full ~35 MB set in the JS heap at once.
@@ -104,6 +145,11 @@ export async function searchWholeBible(
   books: { id: string; name: string }[],
   limit = 200
 ): Promise<WholeBibleSearchResult | null> {
+  // Remote translations are fetched one chapter at a time on demand — there's no bundled
+  // full-text blob to search in memory, and searching all ~1,200 chapters live would burn
+  // through the daily api.bible quota. Not supported for these translations.
+  if (isRemoteTranslation(translationId)) return null;
+
   const translation = await loadTranslation(translationId);
   if (!translation) return null;
 
@@ -137,10 +183,10 @@ export async function getVerses(
   bookName: string,
   chapter: number
 ): Promise<Verse[] | null> {
-  const translation = await loadTranslation(translationId);
-  if (!translation) return null;
+  const chapterData = isRemoteTranslation(translationId)
+    ? await loadRemoteChapter(translationId, bookId, chapter)
+    : (await loadTranslation(translationId))?.[bookId]?.[String(chapter)];
 
-  const chapterData = translation[bookId]?.[String(chapter)];
   if (!Array.isArray(chapterData) || chapterData.length === 0) return null;
 
   return chapterData.map(v => ({
@@ -154,4 +200,5 @@ export async function getVerses(
 
 export function clearCache() {
   cache.clear();
+  remoteChapterCache.clear();
 }

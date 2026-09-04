@@ -6,6 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+.dev.vars
+.wrangler/
 
 # Android — keep project files, exclude build outputs and secrets
 android/.gradle/

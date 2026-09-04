@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { BIBLE_BOOKS } from './bibleStructure';
 import { getLocalizedBookName } from './bookNames';
-import { getVerses, searchWholeBible, matchesSearch, findMatchRange } from './bibleLoader';
+import { getVerses, searchWholeBible, matchesSearch, findMatchRange, isRemoteTranslation } from './bibleLoader';
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata } from './types';
 import Sidebar from './components/Sidebar';
 import ThemeSelector from './components/ThemeSelector';
@@ -51,6 +51,9 @@ const TRANSLATIONS = [
   { id: 'bbe', name: 'Bible in Basic English (BBE)',      short: 'BBE', ntOnly: false },
   { id: 'ylt', name: "Young's Literal Translation (YLT)", short: 'YLT', ntOnly: false },
   { id: 'arb', name: 'Arabic Bible — Van Dyck (ARB)',     short: 'ARB', ntOnly: false, dir: 'rtl' as const },
+  { id: 'nlt', name: 'New Living Translation (NLT)',      short: 'NLT', ntOnly: false, remote: true },
+  { id: 'amp', name: 'Amplified Bible (AMP)',              short: 'AMP', ntOnly: false, remote: true },
+  { id: 'niv', name: 'New International Version (NIV)',   short: 'NIV', ntOnly: false, remote: true },
 ];
 
 interface ErrorStateProps {
@@ -494,6 +497,9 @@ export default function App() {
     if (!searchHistory.includes(q)) setSearchHistory(prev => [q, ...prev].slice(0, 8));
     setSearchFocused(false);
     setWholeBibleQuery(q);
+    setWholeBibleResults([]);
+    setWholeBibleTotal(0);
+    if (isRemoteTranslation(settings.translation)) return; // unsupported — see empty-state message below
     setWholeBibleLoading(true);
     const localizedBooks = BIBLE_BOOKS.map(b => ({ id: b.id, name: getLocalizedBookName(b.id, settings.translation, b.name) }));
     const result = await searchWholeBible(settings.translation, q, localizedBooks);
@@ -591,7 +597,7 @@ export default function App() {
                   >
                     {TRANSLATIONS.map(t => (
                       <option key={t.id} value={t.id} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">
-                        {t.short}{t.ntOnly ? ' (NT)' : ''}
+                        {t.short}{t.ntOnly ? ' (NT)' : ''}{t.remote ? ' (Online)' : ''}
                       </option>
                     ))}
                   </select>
@@ -663,6 +669,11 @@ export default function App() {
                 {activeTrans?.ntOnly && (
                   <span className="text-[9px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 select-none">
                     New Testament Only
+                  </span>
+                )}
+                {activeTrans?.remote && (
+                  <span className="text-[9px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/25 select-none" title="Streamed live — requires an internet connection">
+                    Online Only
                   </span>
                 )}
               </div>
@@ -797,7 +808,11 @@ export default function App() {
                   ))}
                 </div>
               ) : wholeBibleResults.length === 0 ? (
-                <div className="text-center py-12 opacity-60 text-xs">No verses found for &ldquo;{wholeBibleQuery}&rdquo; in {activeTrans?.short}.</div>
+                <div className="text-center py-12 opacity-60 text-xs">
+                  {activeTrans?.remote
+                    ? `Whole-Bible search isn't available for ${activeTrans?.short} — it's streamed live rather than stored on your device. Switch translations to search the whole Bible.`
+                    : <>No verses found for &ldquo;{wholeBibleQuery}&rdquo; in {activeTrans?.short}.</>}
+                </div>
               ) : (
                 <div className="space-y-1.5 py-2">
                   {wholeBibleResults.map((v, i) => {

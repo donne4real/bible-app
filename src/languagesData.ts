@@ -287,4 +287,46 @@ export const LANGUAGES_REGISTRY: LanguageInfo[] = [
     majorCountries: 'Egypt, Sudan, Libya, Tunisia, Algeria, Morocco, and across the Arab world',
     direction: 'rtl'
   },
+  {
+    id: 'nlt',
+    short: 'NLT',
+    name: 'New Living Translation',
+    nativeName: 'New Living Translation',
+    translationName: 'New Living Translation (NLT)',
+    abbreviationExplanation: 'NLT — Thought-for-thought translation by Tyndale House, 1996/2015',
+    description: 'A thought-for-thought translation designed for natural, contemporary readability while remaining faithful to the original Hebrew, Aramaic, and Greek texts. Streamed live from api.bible under license from Tyndale House Publishers — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Modern Translation',
+    majorCountries: 'United States, United Kingdom, Worldwide'
+  },
+  {
+    id: 'amp',
+    short: 'AMP',
+    name: 'Amplified Bible',
+    nativeName: 'Amplified Bible',
+    translationName: 'Amplified Bible (AMP)',
+    abbreviationExplanation: 'AMP — Expanded-meaning translation by The Lockman Foundation, 2015',
+    description: 'Expands key words and phrases with bracketed alternate readings to capture shades of meaning from the original languages. Streamed live from api.bible under license from The Lockman Foundation — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Amplified Translation',
+    majorCountries: 'United States, Worldwide'
+  },
+  {
+    id: 'niv',
+    short: 'NIV',
+    name: 'New International Version',
+    nativeName: 'New International Version',
+    translationName: 'New International Version (NIV)',
+    abbreviationExplanation: 'NIV — Balanced word-for-word/thought-for-thought translation by Biblica, 2011',
+    description: 'One of the most widely read modern English Bibles, balancing accuracy with natural readability. Streamed live from api.bible under license from Biblica — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Modern Translation',
+    majorCountries: 'United States, United Kingdom, Worldwide'
+  },
 ];

@@ -51,7 +51,7 @@ export interface Bookmark {
 export interface ReaderSettings {
   translation: string;
   fontSize: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-  fontFamily: 'serif' | 'sans' | 'mono';
+  fontFamily: 'serif' | 'sans' | 'mono' | 'literata' | 'merriweather' | 'noto-serif';
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
   zenMode: boolean;
   theme: 'light' | 'sepia' | 'dark' | 'charcoal';

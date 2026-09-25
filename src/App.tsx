@@ -34,6 +34,7 @@ import ShareCardModal from './components/ShareCardModal';
 import LanguagesGuideModal from './components/LanguagesGuideModal';
 import BookPicker from './components/BookPicker';
 import VerseLine from './components/VerseLine';
+import DailyVerse from './components/DailyVerse';
 import ReadingPlanPanel from './components/ReadingPlanPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import { motion, AnimatePresence } from 'motion/react';
@@ -364,7 +365,14 @@ export default function App() {
 
   // ── Theme helpers ─────────────────────────────────────────────────────
   const getBodyFontFamilyClass = () => {
-    switch (settings.fontFamily) { case 'serif': return 'font-serif tracking-normal'; case 'mono': return 'font-mono tracking-tight'; default: return 'font-sans tracking-tight'; }
+    switch (settings.fontFamily) {
+      case 'serif': return 'font-serif tracking-normal';
+      case 'mono': return 'font-mono tracking-tight';
+      case 'literata': return 'font-literata tracking-normal';
+      case 'merriweather': return 'font-merriweather tracking-normal';
+      case 'noto-serif': return 'font-noto-serif tracking-normal';
+      default: return 'font-sans tracking-tight';
+    }
   };
   const getFontSizeClass = () => {
     switch (settings.fontSize) { case 'sm': return 'text-sm'; case 'md': return 'text-base'; case 'xl': return 'text-xl'; case '2xl': return 'text-2xl'; case '3xl': return 'text-3xl'; default: return 'text-lg'; }
@@ -818,6 +826,20 @@ export default function App() {
                   </div>
                 )}
 
+                {/* Daily verse — shown above reading content */}
+                {!settings.zenMode && !isComparing && selectedChapter === 1 && selectedBook.id === BIBLE_BOOKS[0].id && (
+                  <DailyVerse
+                    translation={settings.translation}
+                    onNavigate={(book, chapter, verse) => {
+                      setSelectedBook(book);
+                      setSelectedChapter(chapter);
+                      setTimeout(() => {
+                        document.getElementById(`verse-line-${verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 350);
+                    }}
+                  />
+                )}
+
                 {/* Verse display — single column */}
                 {!isComparing && (
                   <div dir={primaryDir} className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} ${getLineHeightClass()} ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
@@ -945,6 +967,14 @@ export default function App() {
           onOpenShareCard={() => setShowShareCard(true)}
           onSaveNote={(text) => handleSaveNote(selectedVerses, text)}
           onCompare={handleCompareSelectedVerses}
+          onNavigateToVerse={(bookId, chapter, verse) => {
+            const book = BIBLE_BOOKS.find(b => b.id === bookId);
+            if (book) { setSelectedBook(book); setSelectedChapter(chapter); }
+            setSelectedVerses([]);
+            setTimeout(() => {
+              document.getElementById(`verse-line-${verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 350);
+          }}
           existingNoteText={selectedVerses.length > 0 ? notes.find(n => n.id === `${selectedVerses[0].book_id}_${selectedVerses[0].chapter}_${selectedVerses[0].verse}`)?.text || '' : ''}
           isBookmarked={isCurrentChapterBookmarked(selectedBook.id, selectedChapter)}
           onToggleBookmark={() => handleToggleBookmark(selectedBook.id, selectedBook.name, selectedChapter)}

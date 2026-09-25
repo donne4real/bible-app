@@ -1,12 +1,29 @@
 /**
- * @license
+ 
+
+  const handleShareWhatsApp = () => {
+    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
+    const msg = textToCopy + ' - ' + verseRef;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  };
+
+  const handleShareNative = async () => {
+    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
+    const shareText = textToCopy + ' - ' + verseRef;
+    if (navigator.share) {
+      try { await navigator.share({ title: verseRef, text: shareText }); } catch {}
+    } else {
+      navigator.clipboard.writeText(shareText);
+    }
+  };* @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns, Link, MessageCircle } from 'lucide-react';
 import { Verse, Highlight, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { getCrossReferences, parseCrossRef } from '../crossReferences';
 
 interface HighlightToolbarProps {
   selectedVerses: Verse[];
@@ -16,6 +33,7 @@ interface HighlightToolbarProps {
   onOpenShareCard: () => void;
   onSaveNote: (text: string) => void;
   onCompare: () => void;
+  onNavigateToVerse?: (bookId: string, chapter: number, verse: number) => void;
   existingNoteText?: string;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
@@ -48,6 +66,7 @@ export default function HighlightToolbar({
   onOpenShareCard,
   onSaveNote,
   onCompare,
+  onNavigateToVerse,
   existingNoteText = '',
   isBookmarked,
   onToggleBookmark
@@ -185,6 +204,25 @@ export default function HighlightToolbar({
                   <Copy className="w-4 h-4" />
                 </button>
 
+                {/* WhatsApp Share */}
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="p-2 bg-zinc-800/80 hover:bg-emerald-700 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center"
+                  aria-label="Share on WhatsApp"
+                  title="Share on WhatsApp"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </button>
+
+                {/* Native Share */}
+                <button
+                  onClick={handleShareNative}
+                  className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center"
+                  aria-label="Share verse"
+                  title="Share verse"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
                 {/* Compare selected verses */}
                 <button
                   onClick={onCompare}
@@ -198,6 +236,36 @@ export default function HighlightToolbar({
               </div>
             </div>
           )}
+
+          {/* Cross-references — shown when a single verse is selected */}
+          {!showNoteEditor && selectedVerses.length === 1 && (() => {
+            const v = selectedVerses[0];
+            const refs = getCrossReferences(v.book_id, v.chapter, v.verse);
+            if (!refs || refs.length === 0) return null;
+            return (
+              <div className="border-t border-zinc-800 pt-2.5">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Link className="w-3 h-3 text-zinc-500" />
+                  <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Cross References</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {refs.slice(0, 6).map(ref => {
+                    const parsed = parseCrossRef(ref);
+                    if (!parsed) return null;
+                    return (
+                      <button
+                        key={ref}
+                        onClick={() => onNavigateToVerse?.(parsed.bookId, parsed.chapter, parsed.verse)}
+                        className="px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-amber-400 text-[10px] font-mono font-semibold transition cursor-pointer"
+                      >
+                        {parsed.bookId} {parsed.chapter}:{parsed.verse}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Compact Note Composers Section */}
           {showNoteEditor && (

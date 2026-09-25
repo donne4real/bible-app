@@ -30,9 +30,19 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       {/* Font family */}
       <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">Typography Font</label>
-        <div className="grid grid-cols-3 gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
-          {(['serif', 'sans', 'mono'] as const).map(f => (
-            <button key={f} onClick={() => onUpdateSettings({ fontFamily: f })} className={`py-1 rounded-md text-[11px] font-medium transition capitalize ${settings.fontFamily === f ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400'}`}>{f}</button>
+        <div className="grid grid-cols-2 gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
+          {([
+            { id: 'serif', label: 'Serif', preview: 'Playfair' },
+            { id: 'sans', label: 'Sans', preview: 'Inter' },
+            { id: 'literata', label: 'Literata', preview: 'Reading' },
+            { id: 'merriweather', label: 'Merriweather', preview: 'Classic' },
+            { id: 'noto-serif', label: 'Noto Serif', preview: 'Global' },
+            { id: 'mono', label: 'Mono', preview: 'JetBrains' },
+          ] as const).map(f => (
+            <button key={f.id} onClick={() => onUpdateSettings({ fontFamily: f.id as any })} className={`py-1.5 px-2 rounded-md text-[11px] font-medium transition text-left ${settings.fontFamily === f.id ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
+              <span className="block leading-tight">{f.label}</span>
+              <span className="block text-[9px] opacity-50">{f.preview}</span>
+            </button>
           ))}
         </div>
       </div>

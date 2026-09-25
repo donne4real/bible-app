@@ -3,14 +3,16 @@
  * Each plan is a sequence of daily readings (book + chapter).
  *
  * Plans are generated from BIBLE_BOOKS metadata at module load time.
- * Three built-in plans:
+ * Four built-in plans:
  * - NT in 30 Days: ~9 chapters/day across all 27 NT books
  * - Psalms in 30 Days: 5 psalms/day (150 total)
  * - Proverbs in 30 Days: 1 chapter/day (31 total)
+ * - Chronological in 365 Days: entire Bible in event order (Blue Letter Bible)
  */
 
 import { ReadingPlan } from './types';
 import { BIBLE_BOOKS } from './bibleStructure';
+import { CHRONOLOGICAL_PLAN } from './chronoPlan';
 
 function genPlanFromChapters(
   id: string,
@@ -78,4 +80,5 @@ export const READING_PLANS: ReadingPlan[] = [
   NT_IN_30_DAYS,
   PSALMS_IN_A_MONTH,
   PROVERBS_IN_A_MONTH,
+  { ...CHRONOLOGICAL_PLAN, multiReading: true },
 ];

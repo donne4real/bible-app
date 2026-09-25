@@ -1,9 +1,10 @@
 import { READING_PLANS, NT_IN_30_DAYS, PSALMS_IN_A_MONTH, PROVERBS_IN_A_MONTH } from './readingPlans';
+import { CHRONOLOGICAL_PLAN } from './chronoPlan';
 import { BIBLE_BOOKS } from './bibleStructure';
 
 describe('READING_PLANS', () => {
-  it('should have 3 plans', () => {
-    expect(READING_PLANS).toHaveLength(3);
+  it('should have 4 plans', () => {
+    expect(READING_PLANS).toHaveLength(4);
   });
 
   it('each plan should have unique id', () => {
@@ -83,5 +84,59 @@ describe('PROVERBS_IN_A_MONTH', () => {
       const readings = PROVERBS_IN_A_MONTH.days.filter(d => d.day === day.day);
       expect(readings).toHaveLength(1);
     }
+  });
+});
+
+describe('CHRONOLOGICAL_PLAN', () => {
+  it('should have exactly 365 days', () => {
+    expect(CHRONOLOGICAL_PLAN.days).toHaveLength(365);
+  });
+
+  it('should have sequential day numbers starting at 1', () => {
+    for (let i = 0; i < CHRONOLOGICAL_PLAN.days.length; i++) {
+      expect(CHRONOLOGICAL_PLAN.days[i].day).toBe(i + 1);
+    }
+  });
+
+  it('each day should have readings array with 2+ entries', () => {
+    for (const day of CHRONOLOGICAL_PLAN.days) {
+      expect(day.readings).toBeDefined();
+      expect(day.readings!.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('should start with Genesis 1', () => {
+    const day1 = CHRONOLOGICAL_PLAN.days[0];
+    expect(day1.readings![0]).toEqual({ bookId: 'GEN', chapter: 1 });
+  });
+
+  it('should end with Revelation 22', () => {
+    const lastDay = CHRONOLOGICAL_PLAN.days[364];
+    const lastReading = lastDay.readings![lastDay.readings!.length - 1];
+    expect(lastReading.bookId).toBe('REV');
+    expect(lastReading.chapter).toBe(22);
+  });
+
+  it('should include at least 60 unique book IDs', () => {
+    const bookIds = new Set<string>();
+    for (const day of CHRONOLOGICAL_PLAN.days) {
+      for (const r of day.readings!) bookIds.add(r.bookId);
+    }
+    expect(bookIds.size).toBeGreaterThanOrEqual(60);
+  });
+
+  it('should have a label for each day', () => {
+    for (const day of CHRONOLOGICAL_PLAN.days) {
+      expect(day.label).toBeTruthy();
+      expect(day.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('total readings should cover at least 1100 chapters', () => {
+    let total = 0;
+    for (const day of CHRONOLOGICAL_PLAN.days) {
+      total += day.readings!.length;
+    }
+    expect(total).toBeGreaterThanOrEqual(1100);
   });
 });

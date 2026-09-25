@@ -100,22 +100,35 @@ export default function ReadingPlanPanel({
         <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2">
           Day {progress.currentDay} Readings
         </div>
+        {todaysReadings.length > 0 && todaysReadings[0].label && todaysReadings[0].label !== `Day ${progress.currentDay}` && (
+          <div className="text-[11px] text-zinc-600 dark:text-zinc-300 font-medium mb-2 px-1">
+            {todaysReadings[0].label}
+          </div>
+        )}
         <div className="space-y-1.5">
-          {todaysReadings.map(r => {
-            const book = BIBLE_BOOKS.find(b => b.id === r.bookId);
-            return (
-              <button
-                key={`${r.bookId}-${r.chapter}`}
-                onClick={() => onNavigateTo(r.bookId, r.chapter)}
-                className="w-full flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-150 dark:border-zinc-800 hover:border-amber-500/30 hover:bg-amber-500/5 transition text-left group"
-              >
-                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
-                  {book?.name || r.bookId} {r.chapter}
-                </span>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-500 transition" />
-              </button>
-            );
-          })}
+          {(() => {
+            // For multi-reading plans, show all readings; otherwise show primary
+            const dayData = todaysReadings[0];
+            const readings = dayData?.readings && dayData.readings.length > 0
+              ? dayData.readings
+              : todaysReadings.map(r => ({ bookId: r.bookId, chapter: r.chapter }));
+
+            return readings.map((r, i) => {
+              const book = BIBLE_BOOKS.find(b => b.id === r.bookId);
+              return (
+                <button
+                  key={`${r.bookId}-${r.chapter}-${i}`}
+                  onClick={() => onNavigateTo(r.bookId, r.chapter)}
+                  className="w-full flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-150 dark:border-zinc-800 hover:border-amber-500/30 hover:bg-amber-500/5 transition text-left group"
+                >
+                  <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+                    {book?.name || r.bookId} {r.chapter}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-500 transition" />
+                </button>
+              );
+            });
+          })()}
         </div>
         <button
           onClick={() => onCompleteDay(progress.currentDay)}

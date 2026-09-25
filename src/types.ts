@@ -79,6 +79,8 @@ export interface ReadingPlanDay {
   label: string;
   bookId: string;
   chapter: number;
+  /** For multi-reading days (e.g. chronological plans): all readings for this day. */
+  readings?: { bookId: string; chapter: number }[];
 }
 
 export interface ReadingPlan {
@@ -86,6 +88,8 @@ export interface ReadingPlan {
   name: string;
   description: string;
   days: ReadingPlanDay[];
+  /** If true, each day may have multiple readings from different books. */
+  multiReading?: boolean;
 }
 
 export interface ReadingPlanProgress {

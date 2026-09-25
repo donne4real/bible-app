@@ -169,6 +169,8 @@ export default function App() {
   const [compareVerses, setCompareVerses] = useState<Verse[]>([]);
   const [compareLoading, setCompareLoading] = useState<boolean>(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+  /** When set, comparison view shows only these verse numbers instead of the full chapter. */
+  const [compareVerseFilter, setCompareVerseFilter] = useState<number[] | null>(null);
 
   // ── UI toggles ────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
@@ -233,6 +235,7 @@ export default function App() {
     setLoading(true);
     setErrorStatus(null);
     setSelectedVerses([]);
+    setCompareVerseFilter(null);
 
     getVerses(settings.translation, selectedBook.id, selectedBook.name, selectedChapter)
       .then(result => {
@@ -364,6 +367,14 @@ export default function App() {
       prev.some(v => v.verse === verse.verse) ? prev.filter(v => v.verse !== verse.verse) : [...prev, verse]
     );
   }, []);
+
+  /** Compare only the selected verses across translations. */
+  const handleCompareSelectedVerses = useCallback(() => {
+    if (selectedVerses.length === 0) return;
+    setCompareVerseFilter(selectedVerses.map(v => v.verse));
+    setIsComparing(true);
+    setSelectedVerses([]);
+  }, [selectedVerses, setIsComparing]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -713,7 +724,13 @@ export default function App() {
                   <div className="mb-6 p-4 bg-current/5 border border-current/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-sans">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[9px] font-mono bg-amber-500/15 px-2 py-0.5 rounded-full">Comparison Lens</span>
-                      <span className="font-semibold text-current opacity-80">Compare {activeTrans?.short} with:</span>
+                      {compareVerseFilter ? (
+                        <span className="font-semibold text-current opacity-80">
+                          Comparing {compareVerseFilter.length} selected {compareVerseFilter.length === 1 ? 'verse' : 'verses'} in {activeTrans?.short} vs:
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-current opacity-80">Compare {activeTrans?.short} with:</span>
+                      )}
                       <div className="relative">
                         <select value={compareTranslation} onChange={e => setCompareTranslation(e.target.value)} className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none uppercase tracking-wider text-xs">
                           {TRANSLATIONS.map(t => (
@@ -732,7 +749,10 @@ export default function App() {
                           <Layers className="w-2.5 h-2.5" /><span>Interlinear</span>
                         </button>
                       </div>
-                      <button onClick={() => setIsComparing(false)} className="p-1 px-2 border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">✕ Close</button>
+                      {compareVerseFilter && (
+                        <button onClick={() => setCompareVerseFilter(null)} className="p-1 px-2 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">Show All</button>
+                      )}
+                      <button onClick={() => { setIsComparing(false); setCompareVerseFilter(null); }} className="p-1 px-2 border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">✕ Close</button>
                     </div>
                   </div>
                 )}
@@ -762,15 +782,19 @@ export default function App() {
                 {/* Verse display — comparison */}
                 {isComparing && (
                   <div className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} text-left`}>
-                    {getFilteredVerses(verses).length === 0 ? (
-                      <div className="text-center py-10 opacity-60 text-xs">No verses matching "{activeSearch}".</div>
-                    ) : compareLayout === 'side-by-side' ? (
+                    {(() => {
+                      const displayVerses = getFilteredVerses(verses).filter(v =>
+                        compareVerseFilter ? compareVerseFilter.includes(v.verse) : true
+                      );
+                      return displayVerses.length === 0 ? (
+                        <div className="text-center py-10 opacity-60 text-xs">No verses to compare.</div>
+                      ) : compareLayout === 'side-by-side' ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4 pb-2 border-b border-current/15 uppercase font-mono text-[10px] font-black opacity-65 tracking-widest hidden md:grid select-none">
                           <div>Primary: {activeTrans?.name}</div>
                           <div>Comparison: {TRANSLATIONS.find(t => t.id === compareTranslation)?.name}</div>
                         </div>
-                        {getFilteredVerses(verses).map(verse => {
+                        {displayVerses.map(verse => {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
                           const hlId = `${settings.translation}_${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
@@ -798,7 +822,7 @@ export default function App() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {getFilteredVerses(verses).map(verse => {
+                        {displayVerses.map(verse => {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
                           const hlId = `${settings.translation}_${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
@@ -829,7 +853,8 @@ export default function App() {
                           );
                         })}
                       </div>
-                    )}
+                    );
+                  })()}
                   </div>
                 )}
               </div>
@@ -858,6 +883,7 @@ export default function App() {
           onRemoveHighlight={() => handleRemoveHighlight(selectedVerses, settings.translation)}
           onOpenShareCard={() => setShowShareCard(true)}
           onSaveNote={(text) => handleSaveNote(selectedVerses, text)}
+          onCompare={handleCompareSelectedVerses}
           existingNoteText={selectedVerses.length > 0 ? notes.find(n => n.id === `${selectedVerses[0].book_id}_${selectedVerses[0].chapter}_${selectedVerses[0].verse}`)?.text || '' : ''}
           isBookmarked={isCurrentChapterBookmarked(selectedBook.id, selectedChapter)}
           onToggleBookmark={() => handleToggleBookmark(selectedBook.id, selectedBook.name, selectedChapter)}

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns } from 'lucide-react';
 import { Verse, Highlight, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -15,6 +15,7 @@ interface HighlightToolbarProps {
   onRemoveHighlight: () => void;
   onOpenShareCard: () => void;
   onSaveNote: (text: string) => void;
+  onCompare: () => void;
   existingNoteText?: string;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
@@ -46,6 +47,7 @@ export default function HighlightToolbar({
   onRemoveHighlight,
   onOpenShareCard,
   onSaveNote,
+  onCompare,
   existingNoteText = '',
   isBookmarked,
   onToggleBookmark
@@ -181,6 +183,17 @@ export default function HighlightToolbar({
                   title="Copy formatted verse text"
                 >
                   <Copy className="w-4 h-4" />
+                </button>
+
+                {/* Compare selected verses */}
+                <button
+                  onClick={onCompare}
+                  className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center gap-1"
+                  aria-label="Compare selected verses"
+                  title="Compare selected verses in another translation"
+                >
+                  <Columns className="w-4 h-4" />
+                  <span className="text-[10px] uppercase font-bold tracking-wider hidden sm:inline">Compare</span>
                 </button>
               </div>
             </div>

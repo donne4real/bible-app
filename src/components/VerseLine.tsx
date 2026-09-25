@@ -3,6 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Renders a single Bible verse as an inline element with:
+ * - Superscript verse number
+ * - Highlight background (if the verse has a saved highlight)
+ * - Note indicator badge
+ * - Selection ring when tapped
+ *
+ * Designed to flow inline with surrounding verses for a natural
+ * reading experience (not block-level).
+ */
+
 import React from 'react';
 import { Verse, Highlight, Note } from '../types';
 import { getHighlightClass } from './HighlightToolbar';

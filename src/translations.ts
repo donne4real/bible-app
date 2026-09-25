@@ -1,6 +1,14 @@
 /**
  * Translation definitions
- * Centralizes the list of available Bible translations
+ * Centralizes the list of available Bible translations.
+ *
+ * Each translation has:
+ * - id: used as the key for loading JSON data (e.g. 'web' → /bibles/web.json)
+ * - name: full display name
+ * - short: abbreviated label shown in the UI header
+ * - ntOnly: true if the translation only contains New Testament books
+ * - remote: true if the translation is streamed via api.bible proxy (requires API_BIBLE_KEY)
+ * - dir: set to 'rtl' for right-to-left languages (Arabic)
  */
 
 export interface Translation {

@@ -1,6 +1,14 @@
 /**
- * Application constants
- * Centralizes magic strings and configuration values
+ * Application constants.
+ * Centralizes magic strings and configuration values used across the app.
+ *
+ * Organized into:
+ * - STORAGE_KEYS: localStorage keys for persisted state
+ * - DEFAULT_SETTINGS: default reader configuration
+ * - CACHE_LIMITS: in-memory cache size caps
+ * - UI constants: timing delays, swipe thresholds
+ * - HIGHLIGHT_COLORS: the 5 available verse highlight colors
+ * - SHARE_CARD_BACKGROUNDS: gradient presets for verse card generation
  */
 
 // localStorage keys

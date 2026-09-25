@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Canonical list of all 66 Bible books (39 OT + 27 NT) with chapter counts.
+ * Used by the book picker, navigation, reading plans, and whole-Bible search.
+ */
+
 import { BookMetadata } from './types';
 
 export const BIBLE_BOOKS: BookMetadata[] = [

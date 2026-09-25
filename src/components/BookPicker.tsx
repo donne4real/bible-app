@@ -3,6 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Full-screen modal for navigating to a specific Bible location.
+ *
+ * Three-step breadcrumb flow:
+ * 1. Book — OT/NT tab grid with all 66 books
+ * 2. Chapter — numbered grid for the selected book
+ * 3. Verse — numbered grid for the selected chapter
+ *
+ * Supports localized book names via the `translation` prop.
+ */
+
 import React from 'react';
 import { Book, X } from 'lucide-react';
 import { motion } from 'motion/react';

@@ -4,6 +4,18 @@ import { BookMetadata } from '../types';
 import { STORAGE_KEYS, SWIPE_THRESHOLD, SWIPE_RATIO, NAV_DEBOUNCE_MS } from '../constants';
 import { usePersistedJSONState, usePersistedNumberState } from './usePersistedState';
 
+/**
+ * Manages Bible navigation state: current book/chapter, book picker UI,
+ * chapter/verse selection, and input methods (swipe, keyboard arrows).
+ *
+ * The selected book and chapter persist to localStorage so the reader
+ * resumes where the user left off.
+ *
+ * @returns Navigation state, setters, and handler functions
+ *
+ * @example
+ * const { selectedBook, selectedChapter, handleNextChapter, openBookPicker } = useBibleNavigation();
+ */
 export function useBibleNavigation() {
   const [selectedBook, setSelectedBook] = usePersistedJSONState<BookMetadata>(
     STORAGE_KEYS.SELECTED_BOOK,

@@ -3,6 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Reading plan panel shown inside the Sidebar's "Plans" tab.
+ *
+ * Two modes:
+ * - Selection mode: lists available plans (NT 30-day, Psalms, Proverbs)
+ *   when no plan is active.
+ * - Active mode: shows progress bar, today's readings with navigation
+ *   links, and a "Mark Complete" button when a plan is in progress.
+ */
+
 import React from 'react';
 import { Calendar, Check, ChevronRight, Play, RotateCcw } from 'lucide-react';
 import { ReadingPlan, ReadingPlanProgress } from '../types';

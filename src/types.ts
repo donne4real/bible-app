@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * Core TypeScript interfaces for the Bible reader app.
+ *
+ * Data models: Verse, Highlight, Note, Bookmark
+ * Settings: ReaderSettings, VerseCardStyle
+ * Metadata: BookMetadata
+ * Reading plans: ReadingPlan, ReadingPlanDay, ReadingPlanProgress
+ */
+
 export interface Verse {
   book_id: string;
   book_name: string;

@@ -1,7 +1,14 @@
 /**
- * Preset reading plans
+ * Preset reading plans.
  * Each plan is a sequence of daily readings (book + chapter).
+ *
+ * Plans are generated from BIBLE_BOOKS metadata at module load time.
+ * Three built-in plans:
+ * - NT in 30 Days: ~9 chapters/day across all 27 NT books
+ * - Psalms in 30 Days: 5 psalms/day (150 total)
+ * - Proverbs in 30 Days: 1 chapter/day (31 total)
  */
+
 import { ReadingPlan } from './types';
 import { BIBLE_BOOKS } from './bibleStructure';
 

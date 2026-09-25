@@ -3,6 +3,19 @@ import { Highlight, Note, Bookmark, Verse } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { usePersistedJSONState } from './usePersistedState';
 
+/**
+ * Manages all user study data — highlights, notes, and bookmarks —
+ * with automatic localStorage persistence.
+ *
+ * Highlights are keyed by `{translation}_{bookId}_{chapter}_{verse}`.
+ * Notes and bookmarks use `{bookId}_{chapter}_{verse}` and
+ * `bookmark_{bookId}_{chapter}` respectively.
+ *
+ * @returns Study data arrays and CRUD handler functions
+ *
+ * @example
+ * const { highlights, notes, handleApplyHighlight, handleToggleBookmark } = useStudyData();
+ */
 export function useStudyData() {
   const [highlights, setHighlights] = usePersistedJSONState<Highlight[]>(
     STORAGE_KEYS.HIGHLIGHTS,

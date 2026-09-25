@@ -3,6 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * React error boundary that catches unhandled render errors and shows
+ * a recovery UI with "Try Again" (resets state) and "Reload Page" options.
+ *
+ * Wraps the entire App component tree to prevent white-screen crashes.
+ */
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 

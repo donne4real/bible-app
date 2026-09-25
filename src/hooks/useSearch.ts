@@ -6,6 +6,20 @@ import { Verse } from '../types';
 import { STORAGE_KEYS, CACHE_LIMITS, DEFAULT_SEARCH_TOPICS } from '../constants';
 import { usePersistedJSONState } from './usePersistedState';
 
+/**
+ * Handles all search functionality: chapter-scoped search with autocomplete,
+ * whole-Bible search, and search history persistence.
+ *
+ * Autocomplete suggests matching book names, verse text, recent searches,
+ * and popular topics. Whole-Bible search loads all chapters of the current
+ * translation and filters client-side (skipped for remote/online translations).
+ *
+ * @param translation - Current translation ID (e.g. 'web', 'kjv')
+ * @returns Search state, refs, and handler functions
+ *
+ * @example
+ * const { activeSearch, setActiveSearch, handleWholeBibleSearch, getFilteredVerses } = useSearch('web');
+ */
 export function useSearch(translation: string) {
   const [activeSearch, setActiveSearch] = useState('');
   const [searchHistory, setSearchHistory] = usePersistedJSONState<string[]>(

@@ -1,5 +1,22 @@
+/**
+ * Bible data loader with LRU caching.
+ *
+ * Handles two kinds of translations:
+ * - **Bundled** (19 translations): loaded from `/bibles/{id}.json` static files.
+ *   Full translation data is fetched once, cached in memory (max 2 translations),
+ *   and chapters are served from the cached object.
+ * - **Remote** (NLT, AMP, NIV): fetched per-chapter from `/api/bible/{id}/{book}/{chapter}`,
+ *   which proxies to api.bible via the Cloudflare Worker. Chapters are cached
+ *   individually (max 100 entries).
+ *
+ * Also provides whole-Bible search and text matching utilities.
+ *
+ * @module bibleLoader
+ */
+
 import { Verse } from './types';
 
+/** Abort fetch requests that take longer than this to prevent indefinite hangs. */
 const FETCH_TIMEOUT_MS = 15_000;
 
 type ChapterVerses = { verse: number; text: string }[];
@@ -124,8 +141,11 @@ function normalizeForSearch(text: string): { normalized: string; map: number[] }
   return { normalized, map };
 }
 
-// Finds `query` inside `text` ignoring diacritics/letter variants/case. Returns
-// the [start, end) range in the ORIGINAL text to highlight, or null if no match.
+/**
+ * Finds `query` inside `text` ignoring diacritics, letter variants, and case.
+ * Returns the [start, end) byte range in the ORIGINAL text for highlighting,
+ * or null if no match. Works with Arabic diacritics and other Unicode text.
+ */
 export function findMatchRange(text: string, query: string): [number, number] | null {
   const nq = normalizeForSearch(query).normalized;
   if (!nq) return null;
@@ -135,6 +155,9 @@ export function findMatchRange(text: string, query: string): [number, number] | 
   return [map[idx], map[idx + nq.length - 1] + 1];
 }
 
+/**
+ * Returns true if `text` contains `query` (diacritic- and case-insensitive).
+ */
 export function matchesSearch(text: string, query: string): boolean {
   return findMatchRange(text, query) !== null;
 }
@@ -144,9 +167,20 @@ export interface WholeBibleSearchResult {
   total: number;
 }
 
-// Searches every book/chapter of a translation already resident in memory (loadTranslation's
-// cache) — since any chapter view already pulls the full translation JSON, this normally
-// requires no extra network fetch. `books` supplies canonical order + display names.
+/**
+ * Searches every book/chapter of a bundled translation already in memory.
+ * Since any chapter view loads the full translation JSON, this normally
+ * requires no extra network fetch.
+ *
+ * Not supported for remote translations (NLT, AMP, NIV) — searching all
+ * ~1,200 chapters live would exceed the api.bible daily quota.
+ *
+ * @param translationId - Translation to search (must be bundled)
+ * @param query - Search string
+ * @param books - Book metadata for ordering and display names
+ * @param limit - Max results to return (default 200)
+ * @returns Matching verses and total count, or null if unsupported
+ */
 export async function searchWholeBible(
   translationId: string,
   query: string,
@@ -185,6 +219,16 @@ export async function searchWholeBible(
   return { results, total };
 }
 
+/**
+ * Loads verses for a specific chapter.
+ * Uses the Worker proxy for remote translations, or the in-memory cache for bundled ones.
+ *
+ * @param translationId - Translation ID (e.g. 'web', 'nlt')
+ * @param bookId - Book ID (e.g. 'GEN', 'MAT')
+ * @param bookName - Display name for the book
+ * @param chapter - Chapter number (1-based)
+ * @returns Array of Verse objects, or null if not found
+ */
 export async function getVerses(
   translationId: string,
   bookId: string,
@@ -206,6 +250,7 @@ export async function getVerses(
   }));
 }
 
+/** Clears all in-memory translation and chapter caches. Used in tests. */
 export function clearCache() {
   cache.clear();
   remoteChapterCache.clear();

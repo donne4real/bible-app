@@ -160,13 +160,14 @@ export default function App() {
       fontFamily: 'serif',
       lineHeight: 'relaxed',
       zenMode: false,
-      theme: window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'sepia',
+      theme: typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'sepia',
     }
   );
 
   // Auto-switch theme when system preference changes (only if user hasn't manually set one)
   useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
     if (!mq) return;
     const handler = (e: MediaQueryListEvent) => {
       // Only auto-switch if the current theme is a system-matching one

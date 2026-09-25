@@ -1,9 +1,7 @@
-const CACHE_NAME = 'wordup-africa-bible-v8';
+const CACHE_NAME = 'wordup-africa-bible-v9';
 
 // App shell — cached on install
 const SHELL_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/icon.svg',
   '/icon-192.png',
@@ -50,10 +48,25 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Cache-first for all GET requests
+// Network-first for HTML navigations, cache-first for everything else
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
+  // HTML pages: network-first (always get latest index.html with new asset hashes)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Everything else (JS, CSS, fonts, Bible JSON): cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -70,8 +83,6 @@ self.addEventListener('fetch', event => {
 
         return response;
       }).catch(() => {
-        // For page navigations fall back to the app shell
-        if (event.request.mode === 'navigate') return caches.match('/index.html');
         // For all other requests (JS chunks, Bible JSON, fonts) try the cache
         return caches.match(event.request);
       });

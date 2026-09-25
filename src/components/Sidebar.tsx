@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check } from 'lucide-react';
+import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked } from 'lucide-react';
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
 
 interface SidebarProps {
@@ -17,6 +17,7 @@ interface SidebarProps {
   onDeleteNote: (id: string) => void;
   onDeleteBookmark: (id: string) => void;
   onNavigateTo: (bookId: string, chapter: number, verse?: number) => void;
+  readingPlanSlot?: React.ReactNode;
 }
 
 export default function Sidebar({
@@ -28,9 +29,10 @@ export default function Sidebar({
   onDeleteHighlight,
   onDeleteNote,
   onDeleteBookmark,
-  onNavigateTo
+  onNavigateTo,
+  readingPlanSlot,
 }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState<'highlights' | 'notes' | 'bookmarks'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'highlights' | 'bookmarks' | 'plans'>('notes');
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!isOpen) return null;
@@ -59,6 +61,7 @@ export default function Sidebar({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close study hub"
           className="p-1 px-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
         >
           <X className="w-4 h-4" />
@@ -66,7 +69,7 @@ export default function Sidebar({
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-3 border-b border-zinc-150 dark:border-zinc-805 bg-zinc-50/50 dark:bg-zinc-950/20 text-xs">
+      <div className="grid grid-cols-4 border-b border-zinc-150 dark:border-zinc-805 bg-zinc-50/50 dark:bg-zinc-950/20 text-xs">
         <button
           onClick={() => { setActiveTab('notes'); setSearchQuery(''); }}
           className={`py-3 font-semibold text-center flex items-center justify-center gap-1 border-b-2 transition ${
@@ -76,7 +79,7 @@ export default function Sidebar({
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          Notes ({notes.length})
+          <span className="hidden sm:inline">Notes</span> ({notes.length})
         </button>
         <button
           onClick={() => { setActiveTab('highlights'); setSearchQuery(''); }}
@@ -87,7 +90,7 @@ export default function Sidebar({
           }`}
         >
           <Highlighter className="w-3.5 h-3.5" />
-          Highlights ({highlights.length})
+          <span className="hidden sm:inline">Highlights</span> ({highlights.length})
         </button>
         <button
           onClick={() => { setActiveTab('bookmarks'); setSearchQuery(''); }}
@@ -98,7 +101,18 @@ export default function Sidebar({
           }`}
         >
           <Bookmark className="w-3.5 h-3.5" />
-          Bookmarks ({bookmarks.length})
+          <span className="hidden sm:inline">Saved</span> ({bookmarks.length})
+        </button>
+        <button
+          onClick={() => { setActiveTab('plans'); setSearchQuery(''); }}
+          className={`py-3 font-semibold text-center flex items-center justify-center gap-1 border-b-2 transition ${
+            activeTab === 'plans'
+              ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-white dark:bg-zinc-900/60'
+              : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+          }`}
+        >
+          <BookMarked className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Plans</span>
         </button>
       </div>
 
@@ -144,6 +158,7 @@ export default function Sidebar({
                   <button
                     onClick={() => onDeleteNote(note.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 rounded transition absolute top-2 right-2"
+                    aria-label="Delete note"
                     title="Delete note"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -185,6 +200,7 @@ export default function Sidebar({
                   <button
                     onClick={() => onDeleteHighlight(hl.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 rounded transition"
+                    aria-label="Delete highlight"
                     title="Delete highlight"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -230,6 +246,7 @@ export default function Sidebar({
                 <button
                   onClick={() => onDeleteBookmark(bm.id)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 rounded transition"
+                  aria-label="Remove bookmark"
                   title="Remove bookmark"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -238,6 +255,9 @@ export default function Sidebar({
             ))
           )
         )}
+
+        {/* --- READING PLANS TAB --- */}
+        {activeTab === 'plans' && readingPlanSlot}
       </div>
 
       {/* Footer Branding of study space */}

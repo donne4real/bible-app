@@ -12,7 +12,7 @@ Get-Process -Name "java","gradle" -ErrorAction SilentlyContinue | Stop-Process -
 Start-Sleep -Seconds 1
 
 # Clean the locked Capacitor build cache
-$capAndroid = "C:\Users\leyea\OneDrive\Documents\Vibe Coding\bible-app\node_modules\@capacitor\android\capacitor\build"
+$capAndroid = "C:\Users\leyea\OneDrive\Documents\Vibe Coding\Claude\bible-app\node_modules\@capacitor\android\capacitor\build"
 if (Test-Path $capAndroid) { Remove-Item $capAndroid -Recurse -Force -ErrorAction SilentlyContinue }
 
 Write-Host "Step 1: Building web app and syncing to Android..." -ForegroundColor Cyan

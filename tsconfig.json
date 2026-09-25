@@ -23,5 +23,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["worker", "node_modules"]
+  "exclude": ["worker", "node_modules", "superseded"]
 }

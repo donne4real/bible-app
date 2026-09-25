@@ -1,5 +1,7 @@
 import { Verse } from './types';
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 type ChapterVerses = { verse: number; text: string }[];
 type BookData      = { [chapter: string]: ChapterVerses };
 type TranslationData = { [bookId: string]: BookData };
@@ -30,11 +32,14 @@ async function loadRemoteChapter(
 
   let data: ChapterVerses;
   try {
-    const res = await fetch(`/api/bible/${translationId}/${bookId}/${chapter}`);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(`/api/bible/${translationId}/${bookId}/${chapter}`, { signal: ctrl.signal });
+    clearTimeout(timer);
     if (!res.ok) return null; // not cached — allow retry
     data = await res.json();
   } catch {
-    return null; // network error — allow retry
+    return null; // network error or timeout — allow retry
   }
 
   remoteChapterCache.set(key, data);
@@ -70,11 +75,14 @@ async function loadTranslation(translationId: string): Promise<TranslationData |
 
   let data: TranslationData;
   try {
-    const res = await fetch(`/bibles/${translationId}.json`);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(`/bibles/${translationId}.json`, { signal: ctrl.signal });
+    clearTimeout(timer);
     if (!res.ok) return null; // non-200 — do not cache, allow retry
     data = await res.json();
   } catch {
-    // network error — do not cache so the next attempt retries the fetch
+    // network error or timeout — do not cache so the next attempt retries the fetch
     return null;
   }
 

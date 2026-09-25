@@ -19,3 +19,9 @@ android/keystore.properties
 
 # Local Netlify folder
 .netlify
+
+# Superseded folder (backup of previous version)
+superseded/
+
+# Claude Code local settings
+.claude/

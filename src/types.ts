@@ -64,3 +64,24 @@ export interface BookMetadata {
   chapters: number;
   testament: 'OT' | 'NT';
 }
+
+export interface ReadingPlanDay {
+  day: number;
+  label: string;
+  bookId: string;
+  chapter: number;
+}
+
+export interface ReadingPlan {
+  id: string;
+  name: string;
+  description: string;
+  days: ReadingPlanDay[];
+}
+
+export interface ReadingPlanProgress {
+  planId: string;
+  startedAt: number;
+  completedDays: number[];
+  currentDay: number;
+}

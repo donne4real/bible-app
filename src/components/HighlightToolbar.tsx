@@ -99,6 +99,7 @@ export default function HighlightToolbar({
             <button
               onClick={onClearSelection}
               className="p-1 rounded-md hover:bg-zinc-800 transition text-zinc-400 hover:text-white"
+              aria-label="Clear selection"
               title="Clear selection"
             >
               <X className="w-4 h-4" />
@@ -115,6 +116,7 @@ export default function HighlightToolbar({
                     key={color.id}
                     onClick={() => onApplyHighlight(color.id)}
                     className="w-7 h-7 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-95 cursor-pointer relative group"
+                    aria-label={`Highlight in ${color.label}`}
                     title={`Highlight in ${color.label}`}
                   >
                     <span className={`absolute inset-0.5 rounded-full ${color.colorBg}`} />
@@ -126,6 +128,7 @@ export default function HighlightToolbar({
                 <button
                   onClick={onRemoveHighlight}
                   className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-rose-400 hover:bg-zinc-700 transition"
+                  aria-label="Remove highlight"
                   title="Remove highlight"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -138,6 +141,7 @@ export default function HighlightToolbar({
                 <button
                   onClick={() => setShowNoteEditor(true)}
                   className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center gap-1"
+                  aria-label="Add note"
                   title="Add reflections note"
                 >
                   <FileText className="w-4 h-4" />
@@ -148,6 +152,7 @@ export default function HighlightToolbar({
                 <button
                   onClick={onOpenShareCard}
                   className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center gap-1"
+                  aria-label="Create verse card"
                   title="Create Verse Card graphic"
                 >
                   <Share2 className="w-4 h-4" />
@@ -162,6 +167,7 @@ export default function HighlightToolbar({
                       ? 'bg-amber-500/20 text-amber-400' 
                       : 'bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300'
                   }`}
+                  aria-label={isBookmarked ? 'Remove chapter bookmark' : 'Bookmark this chapter'}
                   title={isBookmarked ? 'Remove chapter bookmark' : 'Bookmark this chapter'}
                 >
                   {isBookmarked ? <BookmarkCheck className="w-4 h-4 text-amber-400" /> : <Bookmark className="w-4 h-4" />}
@@ -171,6 +177,7 @@ export default function HighlightToolbar({
                 <button
                   onClick={handleCopySimple}
                   className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center"
+                  aria-label="Copy verse text"
                   title="Copy formatted verse text"
                 >
                   <Copy className="w-4 h-4" />

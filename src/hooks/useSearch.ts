@@ -2,9 +2,63 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { BIBLE_BOOKS } from '../bibleStructure';
 import { getLocalizedBookName } from '../bookNames';
 import { getVerses, searchWholeBible, matchesSearch, isRemoteTranslation } from '../bibleLoader';
-import { Verse } from '../types';
+import { Verse, BookMetadata } from '../types';
 import { STORAGE_KEYS, CACHE_LIMITS, DEFAULT_SEARCH_TOPICS } from '../constants';
 import { usePersistedJSONState } from './usePersistedState';
+
+/**
+ * Parses a string like "John 3:16", "Gen 1", "Psalm 23:1-5" into a
+ * book + chapter + optional verse reference.
+ */
+function parseReference(input: string): { book: BookMetadata; chapter: number; verse?: number } | null {
+  const q = input.trim();
+  // Match patterns: "Book Chapter:Verse", "Book Chapter", "Book Ch:V-V"
+  const match = q.match(/^([\d]*\s*[\w]+)\s+(\d+)(?::(\d+))?$/i);
+  if (!match) return null;
+
+  const bookPart = match[1].trim().toLowerCase();
+  const chapter = parseInt(match[2], 10);
+  const verse = match[3] ? parseInt(match[3], 10) : undefined;
+
+  // Find matching book
+  const book = BIBLE_BOOKS.find(b => {
+    const name = b.name.toLowerCase();
+    const id = b.id.toLowerCase();
+    return name === bookPart || id === bookPart ||
+      name.startsWith(bookPart) || name.includes(bookPart);
+  });
+
+  if (!book || chapter < 1 || chapter > book.chapters) return null;
+  return { book, chapter, verse };
+}
+
+/**
+ * Returns close matches for a query against book names (Levenshtein-like).
+ */
+function getFuzzyBookSuggestions(query: string): BookMetadata[] {
+  const q = query.toLowerCase();
+  return BIBLE_BOOKS
+    .map(b => ({
+      book: b,
+      score: fuzzyScore(b.name.toLowerCase(), q),
+    }))
+    .filter(x => x.score > 0.4)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(x => x.book);
+}
+
+/** Simple bigram overlap score between two strings (0 to 1). */
+function fuzzyScore(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const bigramsA = new Set<string>();
+  for (let i = 0; i < a.length - 1; i++) bigramsA.add(a.slice(i, i + 2));
+  let overlap = 0;
+  for (let i = 0; i < b.length - 1; i++) {
+    if (bigramsA.has(b.slice(i, i + 2))) overlap++;
+  }
+  return overlap / Math.max(a.length - 1, b.length - 1, 1);
+}
 
 /**
  * Handles all search functionality: chapter-scoped search with autocomplete,
@@ -75,8 +129,13 @@ export function useSearch(translation: string) {
         verses: [],
         topics: DEFAULT_SEARCH_TOPICS,
         history: searchHistory,
+        parsedRef: null,
+        fuzzyBooks: [],
       };
     }
+
+    const parsedRef = parseReference(activeSearch.trim());
+
     return {
       books: BIBLE_BOOKS.filter(b =>
         b.name.toLowerCase().includes(q) ||
@@ -86,6 +145,8 @@ export function useSearch(translation: string) {
       verses: verses.filter(v => matchesSearch(v.text, q)).slice(0, 5),
       topics: [],
       history: searchHistory.filter(h => h.toLowerCase().includes(q) && h.toLowerCase() !== q),
+      parsedRef,
+      fuzzyBooks: verses.length === 0 && !parsedRef ? getFuzzyBookSuggestions(activeSearch.trim()) : [],
     };
   }, [activeSearch, translation, searchHistory]);
 

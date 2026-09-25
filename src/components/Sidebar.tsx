@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload } from 'lucide-react';
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
+import { exportStudyData, importStudyData, mergeStudyData } from '../exportImport';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -18,6 +19,10 @@ interface SidebarProps {
   onDeleteBookmark: (id: string) => void;
   onNavigateTo: (bookId: string, chapter: number, verse?: number) => void;
   readingPlanSlot?: React.ReactNode;
+  currentStreak?: number;
+  longestStreak?: number;
+  totalDaysRead?: number;
+  onImportData?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
 }
 
 export default function Sidebar({
@@ -31,9 +36,40 @@ export default function Sidebar({
   onDeleteBookmark,
   onNavigateTo,
   readingPlanSlot,
+  currentStreak = 0,
+  longestStreak = 0,
+  totalDaysRead = 0,
+  onImportData,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<'notes' | 'highlights' | 'bookmarks' | 'plans'>('notes');
   const [searchQuery, setSearchQuery] = useState('');
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = () => {
+    exportStudyData(highlights, notes, bookmarks);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const imported = await importStudyData(file);
+      if (onImportData) {
+        onImportData({
+          highlights: imported.highlights,
+          notes: imported.notes,
+          bookmarks: imported.bookmarks,
+        });
+      }
+      setImportStatus(`Imported ${imported.highlights.length} highlights, ${imported.notes.length} notes, ${imported.bookmarks.length} bookmarks`);
+      setTimeout(() => setImportStatus(null), 4000);
+    } catch (err) {
+      setImportStatus('Import failed: ' + (err as Error).message);
+      setTimeout(() => setImportStatus(null), 4000);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   if (!isOpen) return null;
 
@@ -67,6 +103,23 @@ export default function Sidebar({
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Reading Streak */}
+      {currentStreak > 0 && (
+        <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔥</span>
+            <div>
+              <div className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                {currentStreak} day streak
+              </div>
+              <div className="text-[9px] text-amber-600 dark:text-amber-500">
+                Best: {longestStreak} · {totalDaysRead} total days
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="grid grid-cols-4 border-b border-zinc-150 dark:border-zinc-805 bg-zinc-50/50 dark:bg-zinc-950/20 text-xs">
@@ -260,9 +313,33 @@ export default function Sidebar({
         {activeTab === 'plans' && readingPlanSlot}
       </div>
 
-      {/* Footer Branding of study space */}
-      <div className="p-3 text-center border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 font-mono">
-        Active local study journal
+      {/* Footer with export/import */}
+      <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+        {importStatus && (
+          <div className="text-[10px] text-center py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium">
+            {importStatus}
+          </div>
+        )}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 transition cursor-pointer"
+            title="Download backup of all highlights, notes, and bookmarks"
+          >
+            <Download className="w-3 h-3" /> Export
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 transition cursor-pointer"
+            title="Restore from a backup file"
+          >
+            <Upload className="w-3 h-3" /> Import
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+        </div>
+        <div className="text-center text-[9px] text-zinc-400 font-mono">
+          Study data stored locally on this device
+        </div>
       </div>
     </div>
   );

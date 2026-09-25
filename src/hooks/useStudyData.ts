@@ -1,7 +1,22 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Highlight, Note, Bookmark, Verse } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { usePersistedJSONState } from './usePersistedState';
+
+/** Migrate old `{translation}_{bookId}_{ch}_{v}` keys to `{bookId}_{ch}_{v}`. */
+function migrateHighlightKeys(old: Highlight[]): Highlight[] {
+  let changed = false;
+  const result = old.map(h => {
+    // Old format: web_GEN_1_1 → GEN_1_1
+    const parts = h.id.split('_');
+    if (parts.length >= 4 && parts[0].length <= 4) {
+      const newId = parts.slice(1).join('_');
+      if (newId !== h.id) { changed = true; return { ...h, id: newId }; }
+    }
+    return h;
+  });
+  return changed ? result : old;
+}
 
 /**
  * Manages all user study data — highlights, notes, and bookmarks —
@@ -22,6 +37,11 @@ export function useStudyData() {
     []
   );
 
+  // Migrate old translation-prefixed keys on first load
+  useEffect(() => {
+    setHighlights(prev => migrateHighlightKeys(prev));
+  }, []);
+
   const [notes, setNotes] = usePersistedJSONState<Note[]>(
     STORAGE_KEYS.NOTES,
     []
@@ -33,10 +53,10 @@ export function useStudyData() {
   );
 
   // ── Highlights ──────────────────────────────────────────────────────
-  const handleApplyHighlight = useCallback((selectedVerses: Verse[], translation: string, color: string) => {
+  const handleApplyHighlight = useCallback((selectedVerses: Verse[], _translation: string, color: string) => {
     const newHL = [...highlights];
     selectedVerses.forEach(v => {
-      const id = `${translation}_${v.book_id}_${v.chapter}_${v.verse}`;
+      const id = `${v.book_id}_${v.chapter}_${v.verse}`;
       const filtered = newHL.filter(h => h.id !== id);
       filtered.push({
         id,
@@ -52,10 +72,10 @@ export function useStudyData() {
     setHighlights(newHL);
   }, [highlights, setHighlights]);
 
-  const handleRemoveHighlight = useCallback((selectedVerses: Verse[], translation: string) => {
+  const handleRemoveHighlight = useCallback((selectedVerses: Verse[], _translation: string) => {
     let updated = [...highlights];
     selectedVerses.forEach(v => {
-      const id = `${translation}_${v.book_id}_${v.chapter}_${v.verse}`;
+      const id = `${v.book_id}_${v.chapter}_${v.verse}`;
       updated = updated.filter(h => h.id !== id);
     });
     setHighlights(updated);
@@ -109,6 +129,28 @@ export function useStudyData() {
     setBookmarks(prev => prev.filter(b => b.id !== id));
   }, [setBookmarks]);
 
+  // ── Import ──────────────────────────────────────────────────────────
+  const handleImportData = useCallback((imported: { highlights: Highlight[]; notes: Note[]; bookmarks: Bookmark[] }) => {
+    setHighlights(prev => {
+      const map = new Map<string, Highlight>();
+      for (const h of prev) map.set(h.id, h);
+      for (const h of imported.highlights) map.set(h.id, h);
+      return Array.from(map.values());
+    });
+    setNotes(prev => {
+      const map = new Map<string, Note>();
+      for (const n of prev) map.set(n.id, n);
+      for (const n of imported.notes) map.set(n.id, n);
+      return Array.from(map.values());
+    });
+    setBookmarks(prev => {
+      const map = new Map<string, Bookmark>();
+      for (const b of prev) map.set(b.id, b);
+      for (const b of imported.bookmarks) map.set(b.id, b);
+      return Array.from(map.values());
+    });
+  }, [setHighlights, setNotes, setBookmarks]);
+
   return {
     highlights,
     notes,
@@ -121,5 +163,6 @@ export function useStudyData() {
     isCurrentChapterBookmarked,
     handleToggleBookmark,
     handleDeleteBookmarkById,
+    handleImportData,
   };
 }

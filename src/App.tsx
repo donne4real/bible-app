@@ -41,6 +41,7 @@ import { usePersistedJSONState, usePersistedStringState, usePersistedBooleanStat
 import { useBibleNavigation } from './hooks/useBibleNavigation';
 import { useStudyData } from './hooks/useStudyData';
 import { useSearch } from './hooks/useSearch';
+import { useReadingStreak } from './hooks/useReadingStreak';
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;
@@ -142,6 +143,7 @@ export default function App() {
     isCurrentChapterBookmarked,
     handleToggleBookmark,
     handleDeleteBookmarkById,
+    handleImportData,
   } = useStudyData();
 
   // ── Reader state ──────────────────────────────────────────────────────
@@ -158,9 +160,26 @@ export default function App() {
       fontFamily: 'serif',
       lineHeight: 'relaxed',
       zenMode: false,
-      theme: 'sepia',
+      theme: window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'sepia',
     }
   );
+
+  // Auto-switch theme when system preference changes (only if user hasn't manually set one)
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const handler = (e: MediaQueryListEvent) => {
+      // Only auto-switch if the current theme is a system-matching one
+      setSettings(prev => {
+        if (prev.theme === 'dark' || prev.theme === 'sepia') {
+          return { ...prev, theme: e.matches ? 'dark' : 'sepia' };
+        }
+        return prev;
+      });
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [setSettings]);
 
   // ── Comparison ────────────────────────────────────────────────────────
   const [isComparing, setIsComparing] = usePersistedBooleanState(STORAGE_KEYS.IS_COMPARING, false);
@@ -199,6 +218,9 @@ export default function App() {
       return { ...prev, completedDays: [...new Set([...prev.completedDays, day])], currentDay: nextDay };
     });
   }, [setPlanProgress]);
+
+  // ── Reading streak ───────────────────────────────────────────────────
+  const { currentStreak, longestStreak, totalDaysRead, recordRead } = useReadingStreak();
 
   // ── Selection ─────────────────────────────────────────────────────────
   const [selectedVerses, setSelectedVerses] = useState<Verse[]>([]);
@@ -242,6 +264,7 @@ export default function App() {
         if (!active) return;
         if (result && result.length > 0) {
           setVerses(result);
+          recordRead();
         } else {
           setVerses([]);
           setErrorStatus(`${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter} is not available in the ${activeTrans?.short || settings.translation.toUpperCase()} translation.`);
@@ -481,6 +504,10 @@ export default function App() {
           onDeleteNote={handleDeleteNoteById}
           onDeleteBookmark={handleDeleteBookmarkById}
           onNavigateTo={handleNavigateSidebar}
+          currentStreak={currentStreak}
+          longestStreak={longestStreak}
+          totalDaysRead={totalDaysRead}
+          onImportData={handleImportData}
           readingPlanSlot={
             <ReadingPlanPanel
               progress={planProgress}
@@ -563,6 +590,26 @@ export default function App() {
                       }
                       return (
                         <div className="space-y-3.5">
+                          {/* Go to parsed reference */}
+                          {data.parsedRef && (
+                            <button
+                              onClick={() => {
+                                setSelectedBook(data.parsedRef!.book);
+                                setSelectedChapter(data.parsedRef!.chapter);
+                                setActiveSearch('');
+                                setSearchFocused(false);
+                                if (data.parsedRef!.verse) {
+                                  setTimeout(() => {
+                                    document.getElementById(`verse-line-${data.parsedRef!.verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }, 350);
+                                }
+                              }}
+                              className="w-full flex items-center gap-1.5 p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition text-left cursor-pointer font-bold text-emerald-700 dark:text-emerald-400"
+                            >
+                              <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">Go to {data.parsedRef.book.name} {data.parsedRef.chapter}{data.parsedRef.verse ? `:${data.parsedRef.verse}` : ''}</span>
+                            </button>
+                          )}
                           {q && (
                             <button
                               onClick={() => handleWholeBibleSearch(q)}
@@ -571,6 +618,19 @@ export default function App() {
                               <Search className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">Search whole Bible for &ldquo;{q}&rdquo;</span>
                             </button>
+                          )}
+                          {/* Fuzzy book suggestions */}
+                          {data.fuzzyBooks.length > 0 && (
+                            <div>
+                              <div className="px-2 pb-1.5 text-[9px] font-mono font-black uppercase tracking-wider text-zinc-400 select-none">Did you mean?</div>
+                              <div className="grid grid-cols-2 gap-1.5 px-1">
+                                {data.fuzzyBooks.map(b => (
+                                  <button key={b.id} onClick={() => { setActiveSearch(b.name); setSearchFocused(true); }} className="flex items-center gap-1.5 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800 hover:bg-amber-500/10 text-left transition text-xs font-bold cursor-pointer">
+                                    {b.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           )}
                           {data.books.length > 0 && (
                             <div>
@@ -796,7 +856,7 @@ export default function App() {
                         </div>
                         {displayVerses.map(verse => {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
-                          const hlId = `${settings.translation}_${verse.book_id}_${verse.chapter}_${verse.verse}`;
+                          const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
                           const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
@@ -824,7 +884,7 @@ export default function App() {
                       <div className="space-y-4">
                         {displayVerses.map(verse => {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
-                          const hlId = `${settings.translation}_${verse.book_id}_${verse.chapter}_${verse.verse}`;
+                          const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
                           const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);

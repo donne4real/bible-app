@@ -37,7 +37,7 @@ export default function VerseLine({
   direction,
   onClick,
 }: VerseLineProps) {
-  const hlId = `${translation}_${verse.book_id}_${verse.chapter}_${verse.verse}`;
+  const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
   const hlObj = highlights.find(h => h.id === hlId);
   const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
   const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);

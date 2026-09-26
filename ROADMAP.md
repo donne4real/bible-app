@@ -53,6 +53,7 @@
 - [x] PWA manifest and icons
 - [x] Capacitor Android packaging
 - [x] CHANGELOG.md and updated README.md
+- [x] ROADMAP.md (this file)
 
 ### Translations (22 total)
 - [x] 19 bundled offline: WEB, KJV, French, Yoruba, Igbo, Hausa, Twi, Pidgin, Afrikaans, Ndebele, Amharic, Swahili, Shona, Ewe, Haitian Creole, ASV, BBE, YLT, Arabic
@@ -72,7 +73,7 @@
 ### Small Features (1-3 hours each)
 | Feature | Lift | Description |
 |---|---|---|
-| Verse memorization tool | 2-3 hrs | Flashcard UI: show reference → tap to reveal text. Track known vs learning in localStorage. |
+| Verse memorization tool | 2-3 hrs | Flashcard UI: show reference, tap to reveal text. Track known vs learning in localStorage. |
 | 3-4 translation parallel view | 1-2 hrs | Extend comparison mode to N translations with dynamic grid layout. |
 | More translations | Ongoing | Community requests for additional African languages. |
 
@@ -81,8 +82,8 @@
 |---|---|---|
 | Prayer journal | 4-6 hrs | New data model (prayer text, linked verse, date, answered status). New tab in Sidebar. |
 | Daily devotionals | 2-3 days | 365 short devotionals (curate from public domain sources). New page/panel. |
-| Church/group reading plans | 6-8 hrs | Shareable link with plan ID + group code. No backend needed for basic version. |
-| Cloud sync (optional) | 2-3 days | Firebase/Supabase for optional account + data sync. Auth, conflict resolution. |
+| Church/group reading plans | 6-8 hrs | Shareable link with plan ID and group code. No backend needed for basic version. |
+| Cloud sync (optional) | 2-3 days | Firebase/Supabase for optional account and data sync. Auth, conflict resolution. |
 
 ### Deferred
 | Feature | Reason | Future Path |
@@ -95,7 +96,7 @@
 
 ## Competitive Position vs YouVersion
 
-### Where we're better
+### Where we lead
 - 22 African languages (YouVersion has fewer)
 - Offline-first, no account required
 - Clean UI, no ads, no login wall
@@ -110,9 +111,11 @@
 - Notifications and reminders
 - Larger brand recognition
 
-### Gap closers (in progress)
-- [x] Daily Verse → Daily devotionals (next)
-- [x] Reading streaks → Gamification
-- [x] Share improvements → Viral growth
-- [ ] Verse memorization → Engagement depth
-- [ ] Audio (TTS) → Accessibility
+### Gap closers (status)
+- [x] Daily Verse
+- [x] Reading streaks / gamification
+- [x] Share improvements (WhatsApp, native share)
+- [x] Cross-references
+- [ ] Verse memorization
+- [ ] Daily devotionals
+- [ ] Audio (TTS as v1)

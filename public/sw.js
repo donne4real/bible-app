@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wordup-africa-bible-v9';
+const CACHE_NAME = 'wordup-africa-bible-v10';
 
 // App shell — cached on install
 const SHELL_ASSETS = [

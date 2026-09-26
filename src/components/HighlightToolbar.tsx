@@ -1,25 +1,9 @@
 /**
- 
-
-  const handleShareWhatsApp = () => {
-    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
-    const msg = textToCopy + ' - ' + verseRef;
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-  };
-
-  const handleShareNative = async () => {
-    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
-    const shareText = textToCopy + ' - ' + verseRef;
-    if (navigator.share) {
-      try { await navigator.share({ title: verseRef, text: shareText }); } catch {}
-    } else {
-      navigator.clipboard.writeText(shareText);
-    }
-  };* @license
+ * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns, Link, MessageCircle } from 'lucide-react';
 import { Verse, Highlight, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -99,7 +83,23 @@ export default function HighlightToolbar({
 
   const handleCopySimple = () => {
     const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
-    navigator.clipboard.writeText(`“${textToCopy}” — ${verseRef}`);
+    navigator.clipboard.writeText(`\u201c${textToCopy}\u201d \u2014 ${verseRef}`);
+  };
+
+  const handleShareWhatsApp = () => {
+    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
+    const msg = `\u201c${textToCopy}\u201d\n\u2014 ${verseRef}`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  };
+
+  const handleShareNative = async () => {
+    const textToCopy = sortedVerses.map(v => `[${v.verse}] ${v.text.trim()}`).join(' ');
+    const shareText = `\u201c${textToCopy}\u201d \u2014 ${verseRef}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: verseRef, text: shareText }); } catch {}
+    } else {
+      navigator.clipboard.writeText(shareText);
+    }
   };
 
   return (
@@ -169,7 +169,7 @@ export default function HighlightToolbar({
                   <span className="text-[10px] uppercase font-bold tracking-wider hidden sm:inline">Note</span>
                 </button>
 
-                {/* Designers visual shares Card */}
+                {/* Verse Card Design */}
                 <button
                   onClick={onOpenShareCard}
                   className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center gap-1"
@@ -219,10 +219,11 @@ export default function HighlightToolbar({
                   onClick={handleShareNative}
                   className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center"
                   aria-label="Share verse"
-                  title="Share verse"
+                  title="Share via device"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
+
                 {/* Compare selected verses */}
                 <button
                   onClick={onCompare}
@@ -267,7 +268,7 @@ export default function HighlightToolbar({
             );
           })()}
 
-          {/* Compact Note Composers Section */}
+          {/* Compact Note Editor */}
           {showNoteEditor && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}

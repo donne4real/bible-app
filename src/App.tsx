@@ -790,32 +790,34 @@ export default function App() {
               <div>
                 {/* Comparison controls */}
                 {isComparing && (
-                  <div className="mb-6 p-4 bg-current/5 border border-current/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-sans">
+                  <div className="mb-6 p-3 sm:p-4 bg-current/5 border border-current/10 rounded-2xl flex flex-col gap-2.5 text-xs font-sans">
+                    {/* Row 1: label + translation picker */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[9px] font-mono bg-amber-500/15 px-2 py-0.5 rounded-full">Comparison Lens</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[9px] font-mono bg-amber-500/15 px-2 py-0.5 rounded-full shrink-0">Lens</span>
                       {compareVerseFilter ? (
-                        <span className="font-semibold text-current opacity-80">
-                          Comparing {compareVerseFilter.length} selected {compareVerseFilter.length === 1 ? 'verse' : 'verses'} in {activeTrans?.short} vs:
+                        <span className="font-semibold text-current opacity-80 text-[11px]">
+                          {compareVerseFilter.length} {compareVerseFilter.length === 1 ? 'verse' : 'verses'} in {activeTrans?.short} vs:
                         </span>
                       ) : (
-                        <span className="font-semibold text-current opacity-80">Compare {activeTrans?.short} with:</span>
+                        <span className="font-semibold text-current opacity-80 text-[11px]">{activeTrans?.short} vs:</span>
                       )}
-                      <div className="relative">
-                        <select value={compareTranslation} onChange={e => setCompareTranslation(e.target.value)} className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none uppercase tracking-wider text-xs">
+                      <div className="relative shrink-0">
+                        <select value={compareTranslation} onChange={e => setCompareTranslation(e.target.value)} className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none uppercase tracking-wider">
                           {TRANSLATIONS.map(t => (
-                            <option key={t.id} value={t.id} disabled={t.id === settings.translation} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">{t.name}</option>
+                            <option key={t.id} value={t.id} disabled={t.id === settings.translation} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">{t.short}</option>
                           ))}
                         </select>
                         <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[7px] opacity-75 pointer-events-none">▼</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 self-end sm:self-auto select-none">
+                    {/* Row 2: layout buttons + close */}
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <div className="flex bg-current/5 p-0.5 rounded-lg border border-current/10">
                         <button onClick={() => setCompareLayout('side-by-side')} className={`px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer ${compareLayout === 'side-by-side' ? 'bg-amber-500 text-zinc-950 font-black' : 'opacity-65 hover:opacity-100'}`}>
-                          <Columns className="w-2.5 h-2.5" /><span>Side-by-Side</span>
+                          <Columns className="w-2.5 h-2.5" /><span className="hidden sm:inline">Side-by-Side</span><span className="sm:hidden">Side</span>
                         </button>
                         <button onClick={() => setCompareLayout('interlinear')} className={`px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer ${compareLayout === 'interlinear' ? 'bg-amber-500 text-zinc-950 font-black' : 'opacity-65 hover:opacity-100'}`}>
-                          <Layers className="w-2.5 h-2.5" /><span>Interlinear</span>
+                          <Layers className="w-2.5 h-2.5" /><span>Inter</span>
                         </button>
                       </div>
                       {compareVerseFilter && (

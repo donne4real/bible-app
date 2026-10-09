@@ -1,0 +1,332 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+export interface LanguageInfo {
+  id: string;
+  short: string;
+  name: string;
+  nativeName: string;
+  translationName: string;
+  abbreviationExplanation: string;
+  description: string;
+  speakers: string;
+  family: string;
+  region: string;
+  classification: string;
+  majorCountries: string;
+  direction?: 'ltr' | 'rtl';
+}
+
+export const LANGUAGES_REGISTRY: LanguageInfo[] = [
+  {
+    id: 'web',
+    short: 'WEB',
+    name: 'World English Bible',
+    nativeName: 'World English Bible',
+    translationName: 'World English Bible (WEB)',
+    abbreviationExplanation: 'World English Bible — Modern Public Domain Revision',
+    description: 'A modern, accurate revision of the American Standard Version of 1901. Entirely free of copyright restrictions and written in clear contemporary English.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Global Lingua Franca',
+    majorCountries: 'United States, United Kingdom, Canada, Australia, Nigeria, South Africa'
+  },
+  {
+    id: 'kjv',
+    short: 'KJV',
+    name: 'King James Version',
+    nativeName: 'King James Version',
+    translationName: 'King James Version (KJV)',
+    abbreviationExplanation: 'King James Version — Authorized Version of 1611',
+    description: 'First published in 1611 under King James I of England. Renowned for its poetic symmetry, majestic early modern prose, and historic literary prominence.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Historic Classic Standard',
+    majorCountries: 'United Kingdom, United States, Worldwide'
+  },
+  {
+    id: 'lsg',
+    short: 'LSG',
+    name: 'Louis Segond (French)',
+    nativeName: 'Bible Louis Segond',
+    translationName: 'Louis Segond 1910 (LSG)',
+    abbreviationExplanation: 'LSG — Louis Segond 1910 French Protestant Translation',
+    description: 'Translated by Swiss theologian Louis Segond and published in 1910. The standard Protestant French Bible for over a century, widely used across Francophone Africa and France.',
+    speakers: '320+ Million (French)',
+    family: 'Indo-European (Romance)',
+    region: 'Global / Francophone Africa',
+    classification: 'Standard Francophone Bible',
+    majorCountries: 'France, DR Congo, Cameroon, Côte d\'Ivoire, Senegal, Madagascar'
+  },
+  {
+    id: 'yor',
+    short: 'YOR',
+    name: 'Yoruba',
+    nativeName: 'Bibeli Mimo',
+    translationName: 'Bibeli Mimo (Yoruba)',
+    abbreviationExplanation: 'YOR — Yoruba Southwestern Nigerian Standard',
+    description: 'Yoruba is a major language of Nigeria and Benin. Bibeli Mimo is the central literary focal point for southwestern Nigeria, famous for its rich tonal diacritics and expressive idioms.',
+    speakers: '45+ Million',
+    family: 'Niger-Congo (Yoruboid)',
+    region: 'West Africa',
+    classification: 'Regional Official Language',
+    majorCountries: 'Nigeria, Benin, Togo'
+  },
+  {
+    id: 'ibo',
+    short: 'IBO',
+    name: 'Igbo',
+    nativeName: 'Biblia Nso',
+    translationName: 'Biblia Nso (Igbo)',
+    abbreviationExplanation: 'IBO — Igbo Southeastern Nigerian Standard',
+    description: 'The Igbo Bible for southeastern Nigeria. Highly tonal and expressive, incorporating proverb structures and standard modern Igbo orthography.',
+    speakers: '30+ Million',
+    family: 'Niger-Congo (Volta-Niger)',
+    region: 'West Africa',
+    classification: 'Regional Official Language',
+    majorCountries: 'Nigeria, Equatorial Guinea'
+  },
+  {
+    id: 'hau',
+    short: 'HAU',
+    name: 'Hausa',
+    nativeName: 'Littafi Mai Tsarki',
+    translationName: 'Littafi Mai Tsarki (Hausa)',
+    abbreviationExplanation: 'HAU — Hausa West African Sahel Lingua Franca',
+    description: 'Hausa is the most widely spoken native tongue in West Africa, used across commerce, radio, and regional communities spanning the Sahel. Littafi Mai Tsarki delivers the scriptures to millions.',
+    speakers: '80+ Million',
+    family: 'Afroasiatic (Chadic)',
+    region: 'West Africa / Sahel',
+    classification: 'Transnational Lingua Franca',
+    majorCountries: 'Nigeria, Niger, northern Ghana, Cameroon, Chad, Sudan'
+  },
+  {
+    id: 'twi',
+    short: 'TWI',
+    name: 'Twi (Akan Asante)',
+    nativeName: 'Twere Kronkron',
+    translationName: 'Twi Asante Bible (TWI)',
+    abbreviationExplanation: 'TWI — Akan Twi Asante Dialect of Ghana',
+    description: 'The principal dialect cluster of the Akan language group. Highly proverbs-focused and spoken extensively in Ghana. The Twere Kronkron is a central cultural and spiritual text.',
+    speakers: '18 Million',
+    family: 'Niger-Congo (Kwa / Akan)',
+    region: 'West Africa',
+    classification: 'De Facto National Lingua Franca',
+    majorCountries: "Ghana, southern Côte d'Ivoire"
+  },
+  {
+    id: 'pcm',
+    short: 'PCM',
+    name: 'Nigerian Pidgin',
+    nativeName: 'Naija Pidgin Baibul',
+    translationName: 'Nigerian Pidgin Bible (PCM)',
+    abbreviationExplanation: 'PCM — Pidgin Creole Medium West African Lingua Franca',
+    description: 'An expressive Creole that serves as the bonding language across Nigeria\'s 250+ ethnic groups. The Nigerian Pidgin Bible delivers an authentic, vibrant, and accessible reading experience.',
+    speakers: '120+ Million (including second-language users)',
+    family: 'English-based Creole (Naija)',
+    region: 'West Africa',
+    classification: 'Transnational De Facto Lingua Franca',
+    majorCountries: 'Nigeria, parts of West African coast'
+  },
+  {
+    id: 'afr',
+    short: 'AFR',
+    name: 'Afrikaans',
+    nativeName: 'Ou Vertaling',
+    translationName: 'Afrikaans Ou Vertaling (AFR)',
+    abbreviationExplanation: 'AFR — Afrikaans Ou Vertaling (Old Translation)',
+    description: 'The Afrikaans Ou Vertaling is the historic standard Bible translation in Afrikaans, a West Germanic language that evolved from Dutch. Widely used in South Africa and Namibia across a large Christian community.',
+    speakers: '17+ Million',
+    family: 'Indo-European (Germanic)',
+    region: 'Southern Africa',
+    classification: 'National Official Language',
+    majorCountries: 'South Africa, Namibia'
+  },
+  {
+    id: 'amh',
+    short: 'AMH',
+    name: 'Amharic',
+    nativeName: 'መጽሐፍ ቅዱስ',
+    translationName: 'Amharic Bible (AMH)',
+    abbreviationExplanation: 'AMH — Amharic, written in the ancient Ge\'ez (Fidel) script',
+    description: 'Amharic is the official working language of Ethiopia and is written in the unique Ge\'ez syllabic script. As a Semitic language closely tied to ancient Ethiopic scriptural tradition, the Amharic Bible holds deep historical and spiritual significance.',
+    speakers: '57+ Million',
+    family: 'Afroasiatic (Semitic / Ethio-Semitic)',
+    region: 'Horn of Africa',
+    classification: 'National Federal Working Language',
+    majorCountries: 'Ethiopia, Eritrea'
+  },
+  {
+    id: 'swa',
+    short: 'SWA',
+    name: 'Swahili / Kiswahili',
+    nativeName: 'Biblia Takatifu',
+    translationName: 'Swahili Bible (SWA)',
+    abbreviationExplanation: 'SWA — Kiswahili, the lingua franca of East Africa',
+    description: 'Swahili is the most widely spoken African language and the official lingua franca of East Africa. The Biblia Takatifu brings the scripture to millions across the region in a language of unity, commerce, and culture.',
+    speakers: '200+ Million (including second-language speakers)',
+    family: 'Niger-Congo (Bantu / Sabaki)',
+    region: 'East & Central Africa',
+    classification: 'Official Regional Lingua Franca (AU & EAC)',
+    majorCountries: 'Tanzania, Kenya, DR Congo, Uganda, Rwanda, Burundi, Mozambique'
+  },
+  {
+    id: 'sna',
+    short: 'SNA',
+    name: 'Shona (New Testament only)',
+    nativeName: 'Bhaibheri',
+    translationName: 'Shona Bible (SNA)',
+    abbreviationExplanation: 'SNA — chiShona, principal language of Zimbabwe',
+    description: 'Shona (chiShona) is the most widely spoken language in Zimbabwe. Bhaibheri delivers the New Testament in the standard Shona dialect, reflecting the rich Bantu oral tradition and proverb culture of the region.',
+    speakers: '15+ Million',
+    family: 'Niger-Congo (Bantu)',
+    region: 'Southern Africa',
+    classification: 'National Official Language',
+    majorCountries: 'Zimbabwe, Mozambique, Zambia'
+  },
+  {
+    id: 'nde',
+    short: 'NDE',
+    name: 'Ndebele / isiNdebele',
+    nativeName: 'IBhayibhili',
+    translationName: 'Ndebele Bible (NDE)',
+    abbreviationExplanation: 'NDE — isiNdebele, a Nguni Bantu language of Zimbabwe',
+    description: 'isiNdebele is a Nguni language spoken primarily in Zimbabwe and related to Zulu. The Ndebele Bible brings the full scripture to a community with deep cultural ties to both Zimbabwe and South Africa.',
+    speakers: '2+ Million',
+    family: 'Niger-Congo (Bantu / Nguni)',
+    region: 'Southern Africa',
+    classification: 'National Official Language',
+    majorCountries: 'Zimbabwe, South Africa'
+  },
+  {
+    id: 'htc',
+    short: 'HTC',
+    name: 'Haitian Creole',
+    nativeName: 'Bib La',
+    translationName: 'Bib La (Kreyòl Ayisyen)',
+    abbreviationExplanation: 'HTC — Haitian Creole, official language of Haiti',
+    description: 'Haitian Creole (Kreyòl Ayisyen) is the native tongue of virtually all Haitians and one of Haiti\'s two official languages. Bib La (1985) is the standard Protestant Bible in Haitian Creole, published without copyright and now in the public domain.',
+    speakers: '12+ Million',
+    family: 'French-based Creole',
+    region: 'Caribbean / Haitian Diaspora',
+    classification: 'National Official Language',
+    majorCountries: 'Haiti, United States, Canada, France, Dominican Republic'
+  },
+  {
+    id: 'ewe',
+    short: 'EWE',
+    name: 'Ewe',
+    nativeName: 'Bibla',
+    translationName: 'Bibla (Ewe)',
+    abbreviationExplanation: 'EWE — Ewe, a Gbe language of the Gulf of Guinea coast',
+    description: 'Ewe is a Niger-Congo language spoken primarily in Ghana and Togo. The Ewe Bible (Bibla) brings scripture to a community known for its rich oral tradition, complex tonal system, and distinct cultural identity along the Gulf of Guinea coast.',
+    speakers: '7+ Million',
+    family: 'Niger-Congo (Gbe)',
+    region: 'West Africa',
+    classification: 'National Literacy Language',
+    majorCountries: 'Ghana, Togo, Benin'
+  },
+  {
+    id: 'asv',
+    short: 'ASV',
+    name: 'American Standard Version',
+    nativeName: 'American Standard Version',
+    translationName: 'American Standard Version (ASV)',
+    abbreviationExplanation: 'ASV — American Standard Version of 1901',
+    description: 'A highly literal 1901 revision of the King James Version by American scholars. Prized for its word-for-word accuracy and served as the basis for later translations including the WEB.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Historic Literal Standard',
+    majorCountries: 'United States, Worldwide'
+  },
+  {
+    id: 'bbe',
+    short: 'BBE',
+    name: 'Bible in Basic English',
+    nativeName: 'Bible in Basic English',
+    translationName: 'Bible in Basic English (BBE)',
+    abbreviationExplanation: 'BBE — Simplified 850-word Basic English vocabulary',
+    description: 'Published in 1949 using a restricted vocabulary of about 1,000 common English words. Especially accessible to readers using English as a second or additional language.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Simplified Reading Standard',
+    majorCountries: 'Worldwide, ESL readers'
+  },
+  {
+    id: 'ylt',
+    short: 'YLT',
+    name: "Young's Literal Translation",
+    nativeName: "Young's Literal Translation",
+    translationName: "Young's Literal Translation (YLT)",
+    abbreviationExplanation: 'YLT — Ultra-literal word-for-word translation by Robert Young, 1862',
+    description: "An extremely literal, word-for-word translation from the original Hebrew and Greek by Scottish scholar Robert Young. Favored for close textual and word study rather than casual reading.",
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Literal Study Translation',
+    majorCountries: 'Worldwide'
+  },
+  {
+    id: 'arb',
+    short: 'ARB',
+    name: 'Arabic (Van Dyck)',
+    nativeName: 'الكتاب المقدس',
+    translationName: 'Arabic Bible — Van Dyck (ARB)',
+    abbreviationExplanation: 'ARB — Smith & Van Dyck Arabic Translation of 1865',
+    description: 'Translated by Eli Smith and Cornelius Van Dyck with a team of Arab scholars, first published in 1865. The most widely used and historically definitive Arabic Bible translation, still the standard across the Arabic-speaking world today.',
+    speakers: '370+ Million (Arabic)',
+    family: 'Afroasiatic (Semitic)',
+    region: 'North Africa / Middle East',
+    classification: 'Historic Standard Translation',
+    majorCountries: 'Egypt, Sudan, Libya, Tunisia, Algeria, Morocco, and across the Arab world',
+    direction: 'rtl'
+  },
+  {
+    id: 'nlt',
+    short: 'NLT',
+    name: 'New Living Translation',
+    nativeName: 'New Living Translation',
+    translationName: 'New Living Translation (NLT)',
+    abbreviationExplanation: 'NLT — Thought-for-thought translation by Tyndale House, 1996/2015',
+    description: 'A thought-for-thought translation designed for natural, contemporary readability while remaining faithful to the original Hebrew, Aramaic, and Greek texts. Streamed live from api.bible under license from Tyndale House Publishers — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Modern Translation',
+    majorCountries: 'United States, United Kingdom, Worldwide'
+  },
+  {
+    id: 'amp',
+    short: 'AMP',
+    name: 'Amplified Bible',
+    nativeName: 'Amplified Bible',
+    translationName: 'Amplified Bible (AMP)',
+    abbreviationExplanation: 'AMP — Expanded-meaning translation by The Lockman Foundation, 2015',
+    description: 'Expands key words and phrases with bracketed alternate readings to capture shades of meaning from the original languages. Streamed live from api.bible under license from The Lockman Foundation — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Amplified Translation',
+    majorCountries: 'United States, Worldwide'
+  },
+  {
+    id: 'niv',
+    short: 'NIV',
+    name: 'New International Version',
+    nativeName: 'New International Version',
+    translationName: 'New International Version (NIV)',
+    abbreviationExplanation: 'NIV — Balanced word-for-word/thought-for-thought translation by Biblica, 2011',
+    description: 'One of the most widely read modern English Bibles, balancing accuracy with natural readability. Streamed live from api.bible under license from Biblica — requires an internet connection.',
+    speakers: '1.5 Billion (English)',
+    family: 'Indo-European (Germanic)',
+    region: 'Global standard',
+    classification: 'Licensed Modern Translation',
+    majorCountries: 'United States, United Kingdom, Worldwide'
+  },
+];

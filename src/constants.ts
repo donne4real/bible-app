@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
   SEARCH_HISTORY: 'bible_search_history',
   IS_COMPARING: 'bible_is_comparing',
   COMPARE_TRANSLATION: 'bible_compare_translation',
+  COMPARE_TRANSLATIONS: 'bible_compare_translations',
   COMPARE_LAYOUT: 'bible_compare_layout',
 } as const;
 

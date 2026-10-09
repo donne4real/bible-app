@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Columns,
   Layers,
+  Plus,
 } from 'lucide-react';
 import { BIBLE_BOOKS } from './bibleStructure';
 import { getLocalizedBookName } from './bookNames';
@@ -185,11 +186,14 @@ export default function App() {
 
   // ── Comparison ────────────────────────────────────────────────────────
   const [isComparing, setIsComparing] = usePersistedBooleanState(STORAGE_KEYS.IS_COMPARING, false);
-  const [compareTranslation, setCompareTranslation] = usePersistedStringState(STORAGE_KEYS.COMPARE_TRANSLATION, 'kjv');
+  const [compareTranslations, setCompareTranslations] = usePersistedJSONState<string[]>(
+    STORAGE_KEYS.COMPARE_TRANSLATIONS,
+    ['kjv']
+  );
   const [compareLayout, setCompareLayout] = usePersistedStringState(STORAGE_KEYS.COMPARE_LAYOUT, 'side-by-side') as ['side-by-side' | 'interlinear', (v: string) => void];
-  const [compareVerses, setCompareVerses] = useState<Verse[]>([]);
-  const [compareLoading, setCompareLoading] = useState<boolean>(false);
-  const [compareError, setCompareError] = useState<string | null>(null);
+  const [compareVersesMap, setCompareVersesMap] = useState<Record<string, Verse[]>>({});
+  const [compareLoadingMap, setCompareLoadingMap] = useState<Record<string, boolean>>({});
+  const [compareErrorMap, setCompareErrorMap] = useState<Record<string, string | null>>({});
   /** When set, comparison view shows only these verse numbers instead of the full chapter. */
   const [compareVerseFilter, setCompareVerseFilter] = useState<number[] | null>(null);
 
@@ -286,26 +290,33 @@ export default function App() {
 
   // ── Comparison loader ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!isComparing) { setCompareVerses([]); setCompareError(null); return; }
-    let active = true;
-    setCompareLoading(true);
-    setCompareError(null);
+    if (!isComparing) {
+      setCompareVersesMap({});
+      setCompareErrorMap({});
+      return;
+    }
 
-    getVerses(compareTranslation, selectedBook.id, selectedBook.name, selectedChapter)
-      .then(result => {
-        if (!active) return;
-        if (result && result.length > 0) setCompareVerses(result);
-        else setCompareError('Not available in this translation.');
-      })
-      .catch(() => {
-        if (active) setCompareError('Could not load comparison translation.');
-      })
-      .finally(() => {
-        if (active) setCompareLoading(false);
-      });
+    // Load each comparison translation
+    compareTranslations.forEach(transId => {
+      setCompareLoadingMap(prev => ({ ...prev, [transId]: true }));
+      setCompareErrorMap(prev => ({ ...prev, [transId]: null }));
 
-    return () => { active = false; };
-  }, [selectedBook, selectedChapter, compareTranslation, isComparing]);
+      getVerses(transId, selectedBook.id, selectedBook.name, selectedChapter)
+        .then(result => {
+          if (result && result.length > 0) {
+            setCompareVersesMap(prev => ({ ...prev, [transId]: result }));
+          } else {
+            setCompareErrorMap(prev => ({ ...prev, [transId]: 'Not available in this translation.' }));
+          }
+        })
+        .catch(() => {
+          setCompareErrorMap(prev => ({ ...prev, [transId]: 'Could not load comparison translation.' }));
+        })
+        .finally(() => {
+          setCompareLoadingMap(prev => ({ ...prev, [transId]: false }));
+        });
+    });
+  }, [selectedBook, selectedChapter, compareTranslations, isComparing]);
 
   // ── Navigation helpers ────────────────────────────────────────────────
   const handleNavigateSidebar = useCallback((bookId: string, chapter: number, verse?: number) => {
@@ -392,7 +403,7 @@ export default function App() {
   const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
   const getTransDir = (id: string): 'rtl' | 'ltr' => TRANSLATIONS.find(t => t.id === id)?.dir === 'rtl' ? 'rtl' : 'ltr';
   const primaryDir = getTransDir(settings.translation);
-  const compareDir = getTransDir(compareTranslation);
+  const getCompareDir = (id: string) => getTransDir(id);
 
   const handleToggleVerseSelection = useCallback((verse: Verse) => {
     setSelectedVerses(prev =>
@@ -791,7 +802,7 @@ export default function App() {
                 {/* Comparison controls */}
                 {isComparing && (
                   <div className="mb-6 p-3 sm:p-4 bg-current/5 border border-current/10 rounded-2xl flex flex-col gap-2.5 text-xs font-sans">
-                    {/* Row 1: label + translation picker */}
+                    {/* Row 1: label + translation pickers */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest text-[9px] font-mono bg-amber-500/15 px-2 py-0.5 rounded-full shrink-0">Lens</span>
                       {compareVerseFilter ? (
@@ -801,14 +812,43 @@ export default function App() {
                       ) : (
                         <span className="font-semibold text-current opacity-80 text-[11px]">{activeTrans?.short} vs:</span>
                       )}
-                      <div className="relative shrink-0">
-                        <select value={compareTranslation} onChange={e => setCompareTranslation(e.target.value)} className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none tracking-wide truncate">
-                          {TRANSLATIONS.map(t => (
-                            <option key={t.id} value={t.id} disabled={t.id === settings.translation} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">{t.name}</option>
-                          ))}
-                        </select>
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[7px] opacity-75 pointer-events-none">▼</span>
-                      </div>
+                      {compareTranslations.map((transId, idx) => (
+                        <div key={transId} className="relative shrink-0 flex items-center gap-1">
+                          <select
+                            value={transId}
+                            onChange={e => {
+                              const newId = e.target.value;
+                              setCompareTranslations(prev => prev.map((t, i) => i === idx ? newId : t));
+                            }}
+                            className="appearance-none font-bold text-[10px] pl-2.5 pr-6 py-1 bg-current/10 hover:bg-current/15 text-current border-0 rounded-lg cursor-pointer outline-none tracking-wide truncate"
+                          >
+                            {TRANSLATIONS.map(t => (
+                              <option key={t.id} value={t.id} disabled={t.id === settings.translation || compareTranslations.includes(t.id)} className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 font-sans">{t.name}</option>
+                            ))}
+                          </select>
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[7px] opacity-75 pointer-events-none">▼</span>
+                          {compareTranslations.length > 1 && (
+                            <button
+                              onClick={() => setCompareTranslations(prev => prev.filter((_, i) => i !== idx))}
+                              className="w-4 h-4 rounded-full bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 flex items-center justify-center text-[10px] font-bold cursor-pointer shrink-0"
+                              title="Remove translation"
+                            >✕</button>
+                          )}
+                        </div>
+                      ))}
+                      {compareTranslations.length < 3 && (
+                        <button
+                          onClick={() => {
+                            const usedIds = new Set([settings.translation, ...compareTranslations]);
+                            const next = TRANSLATIONS.find(t => !usedIds.has(t.id));
+                            if (next) setCompareTranslations(prev => [...prev, next.id]);
+                          }}
+                          className="w-6 h-6 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 flex items-center justify-center cursor-pointer shrink-0"
+                          title="Add another translation"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                     {/* Row 2: layout buttons + close */}
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -871,13 +911,17 @@ export default function App() {
                       const displayVerses = getFilteredVerses(verses).filter(v =>
                         compareVerseFilter ? compareVerseFilter.includes(v.verse) : true
                       );
+                      const totalCols = 1 + compareTranslations.length;
+                      const gridColsClass = totalCols === 2 ? 'md:grid-cols-2' : totalCols === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4';
                       return displayVerses.length === 0 ? (
                         <div className="text-center py-10 opacity-60 text-xs">No verses to compare.</div>
                       ) : compareLayout === 'side-by-side' ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 pb-2 border-b border-current/15 uppercase font-mono text-[10px] font-black opacity-65 tracking-widest hidden md:grid select-none">
+                        <div className={`grid grid-cols-1 ${gridColsClass} gap-4 pb-2 border-b border-current/15 uppercase font-mono text-[10px] font-black opacity-65 tracking-widest hidden md:grid select-none`}>
                           <div>Primary: {activeTrans?.name}</div>
-                          <div>Comparison: {TRANSLATIONS.find(t => t.id === compareTranslation)?.name}</div>
+                          {compareTranslations.map(transId => (
+                            <div key={transId}>{TRANSLATIONS.find(t => t.id === transId)?.name}</div>
+                          ))}
                         </div>
                         {displayVerses.map(verse => {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
@@ -885,22 +929,29 @@ export default function App() {
                           const hlObj = highlights.find(h => h.id === hlId);
                           const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
-                          const cmpVerse = compareVerses.find(cv => cv.verse === verse.verse);
                           return (
-                            <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`grid grid-cols-1 md:grid-cols-2 gap-4 py-3 px-3.5 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
+                            <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`grid grid-cols-1 ${gridColsClass} gap-4 py-3 px-3.5 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
                               <div dir={primaryDir} className={`space-y-1 ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
                                 <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{activeTrans?.short}</span></div>
                                 <div><sup className={`text-[10px] font-sans font-black text-amber-600/80 ${primaryDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} select-none`}>{verse.verse}</sup><span className="font-medium">{verse.text.trim()}</span>{hasNote && <span className="inline-block px-1 ml-1.5 bg-amber-500/25 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 font-sans align-middle">✎ NOTE</span>}</div>
                               </div>
-                              <div dir={compareDir} className={`space-y-1 border-t md:border-t-0 border-current/10 pt-2.5 md:pt-0 opacity-90 ${compareDir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                                <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{TRANSLATIONS.find(t => t.id === compareTranslation)?.short}</span></div>
-                                <div><sup className={`text-[10px] font-sans font-black text-amber-600/80 ${compareDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} select-none`}>{verse.verse}</sup>
-                                  {compareLoading ? <span className="text-xs opacity-55 animate-pulse font-sans italic">Loading...</span>
-                                    : compareError ? <span className="text-xs text-rose-500 font-sans italic">Not available</span>
-                                    : cmpVerse ? <span>{cmpVerse.text.trim()}</span>
-                                    : <span className="text-xs opacity-40 font-sans italic">Verse missing</span>}
-                                </div>
-                              </div>
+                              {compareTranslations.map(transId => {
+                                const cmpDir = getCompareDir(transId);
+                                const cmpVerse = compareVersesMap[transId]?.find(cv => cv.verse === verse.verse);
+                                const isLoading = compareLoadingMap[transId];
+                                const err = compareErrorMap[transId];
+                                return (
+                                  <div key={transId} dir={cmpDir} className={`space-y-1 border-t md:border-t-0 border-current/10 pt-2.5 md:pt-0 opacity-90 ${cmpDir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                                    <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-mono font-bold uppercase select-none md:hidden"><span>{TRANSLATIONS.find(t => t.id === transId)?.short}</span></div>
+                                    <div><sup className={`text-[10px] font-sans font-black text-amber-600/80 ${cmpDir === 'rtl' ? 'ml-1.5' : 'mr-1.5'} select-none`}>{verse.verse}</sup>
+                                      {isLoading ? <span className="text-xs opacity-55 animate-pulse font-sans italic">Loading...</span>
+                                        : err ? <span className="text-xs text-rose-500 font-sans italic">Not available</span>
+                                        : cmpVerse ? <span>{cmpVerse.text.trim()}</span>
+                                        : <span className="text-xs opacity-40 font-sans italic">Verse missing</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         })}
@@ -913,7 +964,6 @@ export default function App() {
                           const hlObj = highlights.find(h => h.id === hlId);
                           const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
-                          const cmpVerse = compareVerses.find(cv => cv.verse === verse.verse);
                           return (
                             <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`py-3.5 px-4 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 space-y-2.5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
                               <div className="flex items-center justify-between select-none border-b border-current/5 pb-1">
@@ -927,13 +977,21 @@ export default function App() {
                                 <span className="text-[9px] uppercase font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{activeTrans?.short}</span>
                                 <p dir={primaryDir} className={`leading-relaxed text-current font-medium ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>{verse.text.trim()}</p>
                               </div>
-                              <div className="pl-4 border-l-2 border-current/25 py-0.5 opacity-90">
-                                <span className="text-[9px] uppercase font-mono bg-current/10 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{TRANSLATIONS.find(t => t.id === compareTranslation)?.short}</span>
-                                {compareLoading ? <p className="text-xs opacity-55 animate-pulse font-sans italic">Loading translation...</p>
-                                  : compareError ? <p className="text-xs text-rose-500 font-sans italic">Not available in this version.</p>
-                                  : cmpVerse ? <p dir={compareDir} className={`leading-relaxed ${compareDir === 'rtl' ? 'text-right' : 'text-left'}`}>{cmpVerse.text.trim()}</p>
-                                  : <p className="text-xs opacity-40 font-sans italic">Not found</p>}
-                              </div>
+                              {compareTranslations.map(transId => {
+                                const cmpDir = getCompareDir(transId);
+                                const cmpVerse = compareVersesMap[transId]?.find(cv => cv.verse === verse.verse);
+                                const isLoading = compareLoadingMap[transId];
+                                const err = compareErrorMap[transId];
+                                return (
+                                  <div key={transId} className="pl-4 border-l-2 border-current/25 py-0.5 opacity-90">
+                                    <span className="text-[9px] uppercase font-mono bg-current/10 px-1.5 py-0.5 rounded font-black mr-2 tracking-wider inline-block mb-1 select-none">{TRANSLATIONS.find(t => t.id === transId)?.short}</span>
+                                    {isLoading ? <p className="text-xs opacity-55 animate-pulse font-sans italic">Loading translation...</p>
+                                      : err ? <p className="text-xs text-rose-500 font-sans italic">Not available in this version.</p>
+                                      : cmpVerse ? <p dir={cmpDir} className={`leading-relaxed ${cmpDir === 'rtl' ? 'text-right' : 'text-left'}`}>{cmpVerse.text.trim()}</p>
+                                      : <p className="text-xs opacity-40 font-sans italic">Not found</p>}
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         })}

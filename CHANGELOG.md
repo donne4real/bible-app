@@ -2,6 +2,14 @@
 
 All notable changes to Bible in African Languages.
 
+## [2.3.0] — 2026-09-27
+
+### New Features
+- **Multi-translation parallel view** — Compare up to 4 translations at once in side-by-side or interlinear layout. Dynamic grid columns (2-4) with add/remove translation controls.
+- **Full translation names in dropdowns** — Translation selectors now show full names (e.g. "King James Version (KJV)") instead of abbreviated codes.
+
+---
+
 ## [2.2.0] — 2026-09-26
 
 ### New Features

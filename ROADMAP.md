@@ -74,7 +74,7 @@
 | Feature | Lift | Description |
 |---|---|---|
 | Verse memorization tool | 2-3 hrs | Flashcard UI: show reference, tap to reveal text. Track known vs learning in localStorage. |
-| 3-4 translation parallel view | 1-2 hrs | Extend comparison mode to N translations with dynamic grid layout. |
+- [x] 3-4 translation parallel view
 | More translations | Ongoing | Community requests for additional African languages. |
 
 ### Medium Features (half day to full day)

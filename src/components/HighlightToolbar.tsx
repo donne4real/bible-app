@@ -12,7 +12,7 @@ import { getCrossReferences, parseCrossRef } from '../crossReferences';
 interface HighlightToolbarProps {
   selectedVerses: Verse[];
   onClearSelection: () => void;
-  onApplyHighlight: (color: string) => void;
+  onApplyHighlight: (color: string, style?: HighlightStyle) => void;
   onRemoveHighlight: () => void;
   onOpenShareCard: () => void;
   onSaveNote: (text: string) => void;
@@ -31,7 +31,19 @@ export const HIGHLIGHT_COLORS = [
   { id: 'orange', label: 'Coral', colorBg: 'bg-orange-200 dark:bg-orange-900', colorDot: 'bg-orange-300 border-orange-400' },
 ];
 
-export function getHighlightClass(colorId: string): string {
+export type HighlightStyle = 'background' | 'underline';
+
+export function getHighlightClass(colorId: string, style: HighlightStyle = 'background'): string {
+  if (style === 'underline') {
+    switch (colorId) {
+      case 'yellow': return 'border-b-3 border-amber-400 bg-transparent';
+      case 'green': return 'border-b-3 border-emerald-400 bg-transparent';
+      case 'blue': return 'border-b-3 border-sky-400 bg-transparent';
+      case 'pink': return 'border-b-3 border-pink-400 bg-transparent';
+      case 'orange': return 'border-b-3 border-orange-400 bg-transparent';
+      default: return '';
+    }
+  }
   switch (colorId) {
     case 'yellow': return 'bg-amber-100/90 dark:bg-amber-900/40 border-b-2 border-amber-400 text-amber-950 dark:text-amber-100/90';
     case 'green': return 'bg-emerald-100/90 dark:bg-emerald-900/40 border-b-2 border-emerald-400 text-emerald-950 dark:text-emerald-100/90';
@@ -58,6 +70,7 @@ export default function HighlightToolbar({
   const [showNoteEditor, setShowNoteEditor] = useState(false);
   const [noteText, setNoteText] = useState(existingNoteText);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [highlightStyle, setHighlightStyle] = useState<HighlightStyle>('background');
 
   // Sync state if selection shifts
   React.useEffect(() => {
@@ -135,7 +148,7 @@ export default function HighlightToolbar({
                 {HIGHLIGHT_COLORS.map(color => (
                   <button
                     key={color.id}
-                    onClick={() => onApplyHighlight(color.id)}
+                    onClick={() => onApplyHighlight(color.id, highlightStyle)}
                     className="w-7 h-7 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-95 cursor-pointer relative group"
                     aria-label={`Highlight in ${color.label}`}
                     title={`Highlight in ${color.label}`}
@@ -144,7 +157,7 @@ export default function HighlightToolbar({
                     <span className="sr-only">{color.label}</span>
                   </button>
                 ))}
-                
+
                 {/* Clear highlighter */}
                 <button
                   onClick={onRemoveHighlight}
@@ -153,6 +166,20 @@ export default function HighlightToolbar({
                   title="Remove highlight"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Style toggle: background vs underline */}
+                <button
+                  onClick={() => setHighlightStyle(s => s === 'background' ? 'underline' : 'background')}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition text-[10px] font-bold ${
+                    highlightStyle === 'underline' 
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' 
+                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                  aria-label={`Switch to ${highlightStyle === 'background' ? 'underline' : 'background'} style`}
+                  title={`Style: ${highlightStyle === 'background' ? 'Background' : 'Underline'}`}
+                >
+                  {highlightStyle === 'background' ? '▮' : '▁'}
                 </button>
               </div>
 

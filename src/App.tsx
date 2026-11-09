@@ -952,7 +952,7 @@ export default function App() {
         <HighlightToolbar
           selectedVerses={selectedVerses}
           onClearSelection={() => setSelectedVerses([])}
-          onApplyHighlight={(color) => handleApplyHighlight(selectedVerses, settings.translation, color)}
+          onApplyHighlight={(color, style) => handleApplyHighlight(selectedVerses, settings.translation, color, style)}
           onRemoveHighlight={() => handleRemoveHighlight(selectedVerses, settings.translation)}
           onOpenShareCard={() => setShowShareCard(true)}
           onSaveNote={(text) => handleSaveNote(selectedVerses, text)}

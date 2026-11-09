@@ -27,6 +27,7 @@ export interface Highlight {
   chapter: number;
   verse: number;
   color: string;
+  style?: 'background' | 'underline';
   createdAt: number;
 }
 

@@ -39,7 +39,7 @@ export default function VerseLine({
 }: VerseLineProps) {
   const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
   const hlObj = highlights.find(h => h.id === hlId);
-  const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
+  const hlClass = hlObj ? getHighlightClass(hlObj.color, hlObj.style) : '';
   const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
 
   return (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Highlight, Note, Bookmark, Verse } from '../types';
+import { HighlightStyle } from '../components/HighlightToolbar';
 import { STORAGE_KEYS } from '../constants';
 import { usePersistedJSONState } from './usePersistedState';
 
@@ -53,7 +54,7 @@ export function useStudyData() {
   );
 
   // ── Highlights ──────────────────────────────────────────────────────
-  const handleApplyHighlight = useCallback((selectedVerses: Verse[], _translation: string, color: string) => {
+  const handleApplyHighlight = useCallback((selectedVerses: Verse[], _translation: string, color: string, style?: HighlightStyle) => {
     const newHL = [...highlights];
     selectedVerses.forEach(v => {
       const id = `${v.book_id}_${v.chapter}_${v.verse}`;
@@ -65,6 +66,7 @@ export function useStudyData() {
         chapter: v.chapter,
         verse: v.verse,
         color,
+        style: style || 'background',
         createdAt: Date.now(),
       });
       newHL.splice(0, newHL.length, ...filtered);

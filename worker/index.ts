@@ -3,6 +3,8 @@
  * to api.bible, keeping the API key server-side. Static assets (the built SPA) are served
  * directly by the assets binding for every other route (see wrangler.jsonc run_worker_first).
  *
+ * Also handles sync API routes for cross-device data sync via D1 database.
+ *
  * Licensed content is fetched live per-chapter rather than bulk-downloaded, in line with
  * api.bible's terms for these translations. Responses are cached at the edge for a day to
  * stay well within the plan's daily request quota.
@@ -12,10 +14,13 @@
  */
 
 import { BIBLE_IDS, buildUpstreamUrl, extractVerses, parseChapterPath } from '../shared/apiBibleProxy';
+import { handleSyncRequest } from './sync';
 
 interface Env {
   ASSETS: Fetcher;
   API_BIBLE_KEY: string;
+  DB: D1Database;
+  JWT_SECRET: string;
 }
 
 async function handleChapterRequest(
@@ -50,6 +55,13 @@ async function handleChapterRequest(
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    
+    // Handle sync API routes
+    if (url.pathname.startsWith('/api/sync')) {
+      return handleSyncRequest(request, env);
+    }
+    
+    // Handle Bible chapter proxy routes
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
 
     const parsed = parseChapterPath(url.pathname);

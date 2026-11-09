@@ -461,6 +461,10 @@ export default function App() {
             longestStreak={longestStreak}
             totalDaysRead={totalDaysRead}
             onImportData={handleImportData}
+            onSyncComplete={(data) => {
+              // Merge synced data with local data
+              handleImportData(data);
+            }}
             readingPlanSlot={
               <ReadingPlanPanel
                 progress={planProgress}

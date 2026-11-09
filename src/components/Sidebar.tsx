@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload } from 'lucide-react';
+import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload, Cloud } from 'lucide-react';
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
 import { exportStudyData, importStudyData, mergeStudyData } from '../exportImport';
+import SyncPanel from './SyncPanel';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface SidebarProps {
   longestStreak?: number;
   totalDaysRead?: number;
   onImportData?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
+  onSyncComplete?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
 }
 
 export default function Sidebar({
@@ -40,6 +42,7 @@ export default function Sidebar({
   longestStreak = 0,
   totalDaysRead = 0,
   onImportData,
+  onSyncComplete,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<'notes' | 'highlights' | 'bookmarks' | 'plans'>('notes');
   const [searchQuery, setSearchQuery] = useState('');
@@ -373,8 +376,20 @@ export default function Sidebar({
         {activeTab === 'plans' && readingPlanSlot}
       </div>
 
-      {/* Footer with export/import */}
+      {/* Footer with sync and export/import */}
       <div className="p-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+        {/* Cloud Sync Panel */}
+        <SyncPanel
+          highlights={highlights}
+          notes={notes}
+          bookmarks={bookmarks}
+          onSyncComplete={(data) => {
+            if (onSyncComplete) {
+              onSyncComplete(data);
+            }
+          }}
+        />
+
         {importStatus && (
           <div className="text-[10px] text-center py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium">
             {importStatus}
@@ -398,7 +413,7 @@ export default function Sidebar({
           <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
         </div>
         <div className="text-center text-[9px] text-zinc-400 font-mono">
-          Study data stored locally on this device
+          Study data stored locally · Cloud sync available
         </div>
       </div>
     </div>

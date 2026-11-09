@@ -27,14 +27,14 @@ Slide 5 and the square image carry a QR code. People can scan it when the image 
 ```
 The Bible, in your mother tongue. 📖
 
-Bible in African Languages is now free on Google Play.
+Bible in African Languages is free on Google Play.
 
-Read Scripture in Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe and more — 22 translations in one app.
+Read Scripture in Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe and more — 15 translations in one app.
 
-✅ Works without internet (19 translations built in)
+✅ Works without internet: every translation is built in
 ✅ Put Yorùbá and English side by side, verse by verse
 ✅ Highlights, notes and bookmarks
-✅ Search the whole Bible and share verses as images
+✅ Search as you read and share verses as images
 ✅ Free. No ads. No sign-up.
 
 Swipe to see Psalm 119:105 in eight languages 👉
@@ -59,14 +59,14 @@ Tag someone who prays in their mother tongue 🙏🏾
 ```
 📖 The Bible, in your mother tongue.
 
-I built a free app so our families can read God's Word in the languages we pray in. Bible in African Languages is now on Google Play:
+I built a free app so our families can read God's Word in the languages we pray in. Bible in African Languages is free on Google Play:
 👉 https://play.google.com/store/apps/details?id=com.wordupafrica.biblereader
 
-• 22 translations — Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe, Afrikaans, Ndebele, Shona, plus English (KJV, WEB and more), French, Arabic and Haitian Creole
-• Works offline — no data needed to read (19 translations are built in)
+• 15 translations — Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe, Afrikaans, Ndebele, Shona, plus English (KJV and WEB), French and Haitian Creole
+• Works offline — no data needed to read (every translation is built in)
 • Compare two translations side by side — great for learning, teaching children, and following along in church
 • Highlights, notes and bookmarks
-• Search the whole Bible and share any verse as an image
+• Search as you read and share any verse as an image
 • Free, no ads, no sign-up
 
 Please download it, and share this post with someone who would love to read the Bible in their own language. 🙏🏾
@@ -81,7 +81,7 @@ Send `square-whatsapp-facebook-1080x1080.png` first, then this message (or paste
 ```
 📖 *The Bible, in your mother tongue*
 
-I'm happy to share *Bible in African Languages* — a free app on Google Play with 22 translations: Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe and more.
+I'm happy to share *Bible in African Languages* — a free app on Google Play with 15 translations: Yorùbá, Igbo, Hausa, Pidgin, Swahili, Twi, Amharic, Ewe and more.
 
 ✅ Reads *without internet*
 ✅ Yorùbá and English *side by side*

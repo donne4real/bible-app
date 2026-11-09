@@ -487,29 +487,31 @@ export default function App() {
           onTouchStart={handleReaderTouchStart}
           onTouchEnd={handleReaderTouchEnd}
         >
-          <div className={`rounded-3xl p-6 sm:p-9 md:p-11 shadow-lg transition-colors border ${getThemeContainerClass()} ${settings.zenMode ? 'my-2 md:my-6 rounded-2xl' : ''}`}>
-
-            {/* Sticky chapter indicator - visible while scrolling */}
-            <div className="sticky top-0 z-10 -mt-6 sm:-mt-9 md:-mt-11 mb-4 py-2 px-4 -mx-6 sm:-mx-9 md:-mx-11 backdrop-blur-sm bg-inherit/90 border-b border-current/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-500 shrink-0" />
-                <span className="text-sm font-serif font-bold truncate">
-                  {getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}
-                </span>
-                <span className="text-[10px] font-mono opacity-50 hidden sm:inline">
-                  {activeTrans?.short}
-                </span>
-              </div>
-              {!settings.zenMode && (
+          {/* Fixed chapter indicator - visible while scrolling */}
+          {!settings.zenMode && (
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 z-20 w-[95%] max-w-3xl px-4 sm:px-6 pointer-events-none">
+              <div className="pointer-events-auto backdrop-blur-md bg-white/80 dark:bg-zinc-900/80 shadow-lg rounded-xl px-4 py-2 flex items-center justify-between border border-zinc-200/50 dark:border-zinc-700/50">
+                <div className="flex items-center gap-2 min-w-0">
+                  <BookOpen className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-sm font-serif font-bold truncate text-zinc-900 dark:text-zinc-100">
+                    {getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} {selectedChapter}
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline shrink-0">
+                    {activeTrans?.short}
+                  </span>
+                </div>
                 <button 
                   onClick={() => handleToggleBookmark(selectedBook.id, selectedBook.name, selectedChapter)} 
-                  className="p-1.5 rounded-full hover:bg-current/10 transition shrink-0" 
+                  className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition shrink-0" 
                   title={isCurrentChapterBookmarked(selectedBook.id, selectedChapter) ? 'Remove bookmark' : 'Bookmark this chapter'}
                 >
-                  <Bookmark className={`w-4 h-4 ${isCurrentChapterBookmarked(selectedBook.id, selectedChapter) ? 'fill-amber-500 text-amber-500' : 'opacity-50'}`} />
+                  <Bookmark className={`w-4 h-4 ${isCurrentChapterBookmarked(selectedBook.id, selectedChapter) ? 'fill-amber-500 text-amber-500' : 'text-zinc-400'}`} />
                 </button>
-              )}
+              </div>
             </div>
+          )}
+
+          <div className={`rounded-3xl p-6 sm:p-9 md:p-11 shadow-lg transition-colors border ${getThemeContainerClass()} ${settings.zenMode ? 'my-2 md:my-6 rounded-2xl' : ''}`}>
 
             {/* Chapter header */}
             <div className="flex items-center justify-between pb-4 border-b border-current/15 mb-6">

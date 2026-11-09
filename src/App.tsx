@@ -242,6 +242,9 @@ export default function App() {
     clearWholeBibleSearch,
   } = useSearch(settings.translation);
 
+  // ── Helpers (needed by effects) ───────────────────────────────────────
+  const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
+
   // ── Primary verse loader ──────────────────────────────────────────────
   useEffect(() => {
     let active = true;
@@ -330,7 +333,6 @@ export default function App() {
   }, [setSelectedBook, setSelectedChapter, clearWholeBibleSearch, setActiveSearch, setSearchFocused]);
 
   // ── Helpers ───────────────────────────────────────────────────────────
-  const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
   const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
   const getTransDir = (id: string): 'rtl' | 'ltr' => TRANSLATIONS.find(t => t.id === id)?.dir === 'rtl' ? 'rtl' : 'ltr';
   const primaryDir = getTransDir(settings.translation);

@@ -36,20 +36,21 @@ export type HighlightStyle = 'background' | 'underline';
 export function getHighlightClass(colorId: string, style: HighlightStyle = 'background'): string {
   if (style === 'underline') {
     switch (colorId) {
-      case 'yellow': return 'border-b-3 border-amber-400 bg-transparent';
-      case 'green': return 'border-b-3 border-emerald-400 bg-transparent';
-      case 'blue': return 'border-b-3 border-sky-400 bg-transparent';
-      case 'pink': return 'border-b-3 border-pink-400 bg-transparent';
-      case 'orange': return 'border-b-3 border-orange-400 bg-transparent';
+      case 'yellow': return 'border-b-3 border-amber-400 dark:border-amber-300 bg-transparent';
+      case 'green': return 'border-b-3 border-emerald-400 dark:border-emerald-300 bg-transparent';
+      case 'blue': return 'border-b-3 border-sky-400 dark:border-sky-300 bg-transparent';
+      case 'pink': return 'border-b-3 border-pink-400 dark:border-pink-300 bg-transparent';
+      case 'orange': return 'border-b-3 border-orange-400 dark:border-orange-300 bg-transparent';
       default: return '';
     }
   }
+  // Background style - improved dark mode visibility
   switch (colorId) {
-    case 'yellow': return 'bg-amber-100/90 dark:bg-amber-900/40 border-b-2 border-amber-400 text-amber-950 dark:text-amber-100/90';
-    case 'green': return 'bg-emerald-100/90 dark:bg-emerald-900/40 border-b-2 border-emerald-400 text-emerald-950 dark:text-emerald-100/90';
-    case 'blue': return 'bg-sky-100/90 dark:bg-sky-900/40 border-b-2 border-sky-400 text-sky-950 dark:text-sky-100/90';
-    case 'pink': return 'bg-pink-100/90 dark:bg-pink-900/40 border-b-2 border-pink-400 text-pink-950 dark:text-pink-100/90';
-    case 'orange': return 'bg-orange-100/90 dark:bg-orange-900/40 border-b-2 border-orange-400 text-orange-950 dark:text-orange-100/90';
+    case 'yellow': return 'bg-amber-200/90 dark:bg-amber-500/30 border-b-2 border-amber-500 dark:border-amber-400 text-amber-950 dark:text-amber-100';
+    case 'green': return 'bg-emerald-200/90 dark:bg-emerald-500/30 border-b-2 border-emerald-500 dark:border-emerald-400 text-emerald-950 dark:text-emerald-100';
+    case 'blue': return 'bg-sky-200/90 dark:bg-sky-500/30 border-b-2 border-sky-500 dark:border-sky-400 text-sky-950 dark:text-sky-100';
+    case 'pink': return 'bg-pink-200/90 dark:bg-pink-500/30 border-b-2 border-pink-500 dark:border-pink-400 text-pink-950 dark:text-pink-100';
+    case 'orange': return 'bg-orange-200/90 dark:bg-orange-500/30 border-b-2 border-orange-500 dark:border-orange-400 text-orange-950 dark:text-orange-100';
     default: return '';
   }
 }

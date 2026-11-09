@@ -13,7 +13,7 @@
  * - Epistles placed within Acts chronology
  */
 
-import { BookMetadata } from '../types';
+import { BookMetadata } from './types';
 
 /**
  * Period of biblical history with its chapters in chronological reading order.

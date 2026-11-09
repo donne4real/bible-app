@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import {
   Book,
   Menu,
@@ -28,22 +28,26 @@ import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookM
 import { TRANSLATIONS } from './translations';
 import { STORAGE_KEYS, CACHE_LIMITS, SCROLL_DELAY_MS, HIGHLIGHT_REMOVE_DELAY_MS } from './constants';
 import { READING_PLANS } from './readingPlans';
-import Sidebar from './components/Sidebar';
 import ThemeSelector from './components/ThemeSelector';
 import HighlightToolbar, { getHighlightClass } from './components/HighlightToolbar';
-import ShareCardModal from './components/ShareCardModal';
-import LanguagesGuideModal from './components/LanguagesGuideModal';
-import BookPicker from './components/BookPicker';
 import VerseLine from './components/VerseLine';
 import DailyVerse from './components/DailyVerse';
 import ReadingPlanPanel from './components/ReadingPlanPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import { motion, AnimatePresence } from 'motion/react';
-import { usePersistedJSONState, usePersistedStringState, usePersistedBooleanState } from './hooks/usePersistedState';
+import { usePersistedJSONState } from './hooks/usePersistedState';
 import { useBibleNavigation } from './hooks/useBibleNavigation';
 import { useStudyData } from './hooks/useStudyData';
 import { useSearch } from './hooks/useSearch';
 import { useReadingStreak } from './hooks/useReadingStreak';
+import { useSettings } from './hooks/useSettings';
+import { useComparison } from './hooks/useComparison';
+
+// Code-split heavy components that aren't needed on initial render
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const ShareCardModal = lazy(() => import('./components/ShareCardModal'));
+const LanguagesGuideModal = lazy(() => import('./components/LanguagesGuideModal'));
+const BookPicker = lazy(() => import('./components/BookPicker'));
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;
@@ -153,49 +157,35 @@ export default function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
-  // ── Settings ──────────────────────────────────────────────────────────
-  const [settings, setSettings] = usePersistedJSONState<ReaderSettings>(
-    STORAGE_KEYS.READER_SETTINGS,
-    {
-      translation: 'web',
-      fontSize: 'lg',
-      fontFamily: 'serif',
-      lineHeight: 'relaxed',
-      zenMode: false,
-      theme: typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'sepia',
-    }
-  );
+  // ── Settings (extracted to hook) ──────────────────────────────────────
+  const {
+    settings,
+    handleUpdateSettings,
+    getBodyFontFamilyClass,
+    getFontSizeClass,
+    getLineHeightClass,
+    getThemeContainerClass,
+    getThemeOuterClass,
+  } = useSettings();
 
-  // Auto-switch theme when system preference changes (only if user hasn't manually set one)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (!mq) return;
-    const handler = (e: MediaQueryListEvent) => {
-      // Only auto-switch if the current theme is a system-matching one
-      setSettings(prev => {
-        if (prev.theme === 'dark' || prev.theme === 'sepia') {
-          return { ...prev, theme: e.matches ? 'dark' : 'sepia' };
-        }
-        return prev;
-      });
-    };
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [setSettings]);
-
-  // ── Comparison ────────────────────────────────────────────────────────
-  const [isComparing, setIsComparing] = usePersistedBooleanState(STORAGE_KEYS.IS_COMPARING, false);
-  const [compareTranslations, setCompareTranslations] = usePersistedJSONState<string[]>(
-    STORAGE_KEYS.COMPARE_TRANSLATIONS,
-    ['kjv']
-  );
-  const [compareLayout, setCompareLayout] = usePersistedStringState(STORAGE_KEYS.COMPARE_LAYOUT, 'side-by-side') as ['side-by-side' | 'interlinear', (v: string) => void];
-  const [compareVersesMap, setCompareVersesMap] = useState<Record<string, Verse[]>>({});
-  const [compareLoadingMap, setCompareLoadingMap] = useState<Record<string, boolean>>({});
-  const [compareErrorMap, setCompareErrorMap] = useState<Record<string, string | null>>({});
-  /** When set, comparison view shows only these verse numbers instead of the full chapter. */
-  const [compareVerseFilter, setCompareVerseFilter] = useState<number[] | null>(null);
+  // ── Comparison (extracted to hook) ────────────────────────────────────
+  const {
+    isComparing,
+    setIsComparing,
+    compareTranslations,
+    setCompareTranslations,
+    compareLayout,
+    setCompareLayout,
+    compareVersesMap,
+    compareLoadingMap,
+    compareErrorMap,
+    compareVerseFilter,
+    setCompareVerseFilter,
+    handleCompareSelectedVerses,
+    handleAddComparisonTranslation,
+    handleRemoveComparisonTranslation,
+    handleCloseComparison,
+  } = useComparison(selectedBook.id, selectedBook.name, selectedChapter, settings.translation);
 
   // ── UI toggles ────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
@@ -252,11 +242,6 @@ export default function App() {
     clearWholeBibleSearch,
   } = useSearch(settings.translation);
 
-  // ── Update settings ───────────────────────────────────────────────────
-  const handleUpdateSettings = useCallback((updates: Partial<ReaderSettings>) => {
-    setSettings(prev => ({ ...prev, ...updates }));
-  }, [setSettings]);
-
   // ── Primary verse loader ──────────────────────────────────────────────
   useEffect(() => {
     let active = true;
@@ -287,36 +272,6 @@ export default function App() {
 
     return () => { active = false; };
   }, [selectedBook, selectedChapter, settings.translation]);
-
-  // ── Comparison loader ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isComparing) {
-      setCompareVersesMap({});
-      setCompareErrorMap({});
-      return;
-    }
-
-    // Load each comparison translation
-    compareTranslations.forEach(transId => {
-      setCompareLoadingMap(prev => ({ ...prev, [transId]: true }));
-      setCompareErrorMap(prev => ({ ...prev, [transId]: null }));
-
-      getVerses(transId, selectedBook.id, selectedBook.name, selectedChapter)
-        .then(result => {
-          if (result && result.length > 0) {
-            setCompareVersesMap(prev => ({ ...prev, [transId]: result }));
-          } else {
-            setCompareErrorMap(prev => ({ ...prev, [transId]: 'Not available in this translation.' }));
-          }
-        })
-        .catch(() => {
-          setCompareErrorMap(prev => ({ ...prev, [transId]: 'Could not load comparison translation.' }));
-        })
-        .finally(() => {
-          setCompareLoadingMap(prev => ({ ...prev, [transId]: false }));
-        });
-    });
-  }, [selectedBook, selectedChapter, compareTranslations, isComparing]);
 
   // ── Navigation helpers ────────────────────────────────────────────────
   const handleNavigateSidebar = useCallback((bookId: string, chapter: number, verse?: number) => {
@@ -374,30 +329,6 @@ export default function App() {
     }, 350);
   }, [setSelectedBook, setSelectedChapter, clearWholeBibleSearch, setActiveSearch, setSearchFocused]);
 
-  // ── Theme helpers ─────────────────────────────────────────────────────
-  const getBodyFontFamilyClass = () => {
-    switch (settings.fontFamily) {
-      case 'serif': return 'font-serif tracking-normal';
-      case 'mono': return 'font-mono tracking-tight';
-      case 'literata': return 'font-literata tracking-normal';
-      case 'merriweather': return 'font-merriweather tracking-normal';
-      case 'noto-serif': return 'font-noto-serif tracking-normal';
-      default: return 'font-sans tracking-tight';
-    }
-  };
-  const getFontSizeClass = () => {
-    switch (settings.fontSize) { case 'sm': return 'text-sm'; case 'md': return 'text-base'; case 'xl': return 'text-xl'; case '2xl': return 'text-2xl'; case '3xl': return 'text-3xl'; default: return 'text-lg'; }
-  };
-  const getLineHeightClass = () => {
-    switch (settings.lineHeight) { case 'tight': return 'leading-snug space-y-3'; case 'normal': return 'leading-normal space-y-4'; case 'loose': return 'leading-loose space-y-7'; default: return 'leading-relaxed space-y-5'; }
-  };
-  const getThemeContainerClass = () => {
-    switch (settings.theme) { case 'light': return 'bg-[#FAFAFA] text-zinc-900 border-zinc-200'; case 'dark': return 'bg-[#1C1C24] text-zinc-200 border-zinc-900'; case 'charcoal': return 'bg-[#0B0B0E] text-zinc-400 border-zinc-950'; default: return 'bg-[#F4ECD8] text-[#362719] border-[#E5DAC3]'; }
-  };
-  const getThemeOuterClass = () => {
-    switch (settings.theme) { case 'light': return 'bg-zinc-100 min-h-screen'; case 'dark': return 'bg-zinc-950 min-h-screen'; case 'charcoal': return 'bg-[#000000] min-h-screen'; default: return 'bg-[#EADFCA] min-h-screen'; }
-  };
-
   // ── Helpers ───────────────────────────────────────────────────────────
   const activeTrans = TRANSLATIONS.find(t => t.id === settings.translation);
   const isNtOnlyError = activeTrans?.ntOnly && selectedBook.testament === 'OT';
@@ -412,12 +343,11 @@ export default function App() {
   }, []);
 
   /** Compare only the selected verses across translations. */
-  const handleCompareSelectedVerses = useCallback(() => {
+  const handleCompareSelectedVersesAndClear = useCallback(() => {
     if (selectedVerses.length === 0) return;
-    setCompareVerseFilter(selectedVerses.map(v => v.verse));
-    setIsComparing(true);
+    handleCompareSelectedVerses(selectedVerses);
     setSelectedVerses([]);
-  }, [selectedVerses, setIsComparing]);
+  }, [selectedVerses, handleCompareSelectedVerses]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -513,35 +443,37 @@ export default function App() {
           </header>
         )}
 
-        {/* Sidebar */}
-        <Sidebar
-          isOpen={showSidebar}
-          onClose={() => setShowSidebar(false)}
-          highlights={highlights}
-          notes={notes}
-          bookmarks={bookmarks}
-          onDeleteHighlight={handleDeleteHighlightById}
-          onDeleteNote={handleDeleteNoteById}
-          onDeleteBookmark={handleDeleteBookmarkById}
-          onNavigateTo={handleNavigateSidebar}
-          currentStreak={currentStreak}
-          longestStreak={longestStreak}
-          totalDaysRead={totalDaysRead}
-          onImportData={handleImportData}
-          readingPlanSlot={
-            <ReadingPlanPanel
-              progress={planProgress}
-              onStartPlan={handleStartPlan}
-              onResetPlan={handleResetPlan}
-              onCompleteDay={handleCompleteDay}
-              onNavigateTo={(bookId, chapter) => {
-                const book = BIBLE_BOOKS.find(b => b.id === bookId);
-                if (book) { setSelectedBook(book); setSelectedChapter(chapter); }
-                setShowSidebar(false);
-              }}
-            />
-          }
-        />
+        {/* Sidebar (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <Sidebar
+            isOpen={showSidebar}
+            onClose={() => setShowSidebar(false)}
+            highlights={highlights}
+            notes={notes}
+            bookmarks={bookmarks}
+            onDeleteHighlight={handleDeleteHighlightById}
+            onDeleteNote={handleDeleteNoteById}
+            onDeleteBookmark={handleDeleteBookmarkById}
+            onNavigateTo={handleNavigateSidebar}
+            currentStreak={currentStreak}
+            longestStreak={longestStreak}
+            totalDaysRead={totalDaysRead}
+            onImportData={handleImportData}
+            readingPlanSlot={
+              <ReadingPlanPanel
+                progress={planProgress}
+                onStartPlan={handleStartPlan}
+                onResetPlan={handleResetPlan}
+                onCompleteDay={handleCompleteDay}
+                onNavigateTo={(bookId, chapter) => {
+                  const book = BIBLE_BOOKS.find(b => b.id === bookId);
+                  if (book) { setSelectedBook(book); setSelectedChapter(chapter); }
+                  setShowSidebar(false);
+                }}
+              />
+            }
+          />
+        </Suspense>
 
         {/* Main content */}
         <main
@@ -829,7 +761,7 @@ export default function App() {
                           <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[7px] opacity-75 pointer-events-none">▼</span>
                           {compareTranslations.length > 1 && (
                             <button
-                              onClick={() => setCompareTranslations(prev => prev.filter((_, i) => i !== idx))}
+                              onClick={() => handleRemoveComparisonTranslation(idx)}
                               className="w-4 h-4 rounded-full bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 flex items-center justify-center text-[10px] font-bold cursor-pointer shrink-0"
                               title="Remove translation"
                             >✕</button>
@@ -838,11 +770,7 @@ export default function App() {
                       ))}
                       {compareTranslations.length < 3 && (
                         <button
-                          onClick={() => {
-                            const usedIds = new Set([settings.translation, ...compareTranslations]);
-                            const next = TRANSLATIONS.find(t => !usedIds.has(t.id));
-                            if (next) setCompareTranslations(prev => [...prev, next.id]);
-                          }}
+                          onClick={handleAddComparisonTranslation}
                           className="w-6 h-6 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 flex items-center justify-center cursor-pointer shrink-0"
                           title="Add another translation"
                         >
@@ -863,7 +791,7 @@ export default function App() {
                       {compareVerseFilter && (
                         <button onClick={() => setCompareVerseFilter(null)} className="p-1 px-2 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">Show All</button>
                       )}
-                      <button onClick={() => { setIsComparing(false); setCompareVerseFilter(null); }} className="p-1 px-2 border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">✕ Close</button>
+                      <button onClick={handleCloseComparison} className="p-1 px-2 border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 rounded-lg transition text-[10px] font-bold cursor-pointer">✕ Close</button>
                     </div>
                   </div>
                 )}
@@ -1026,7 +954,7 @@ export default function App() {
           onRemoveHighlight={() => handleRemoveHighlight(selectedVerses, settings.translation)}
           onOpenShareCard={() => setShowShareCard(true)}
           onSaveNote={(text) => handleSaveNote(selectedVerses, text)}
-          onCompare={handleCompareSelectedVerses}
+          onCompare={handleCompareSelectedVersesAndClear}
           onNavigateToVerse={(bookId, chapter, verse) => {
             const book = BIBLE_BOOKS.find(b => b.id === bookId);
             if (book) { setSelectedBook(book); setSelectedChapter(chapter); }
@@ -1064,42 +992,48 @@ export default function App() {
           </>
         )}
 
-        {/* Share card modal */}
-        <ShareCardModal isOpen={showShareCard} onClose={() => setShowShareCard(false)} selectedVerses={selectedVerses} translation={settings.translation} />
+        {/* Share card modal (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <ShareCardModal isOpen={showShareCard} onClose={() => setShowShareCard(false)} selectedVerses={selectedVerses} translation={settings.translation} />
+        </Suspense>
 
-        {/* Languages guide modal */}
-        <AnimatePresence>
-          {showLanguagesList && (
-            <LanguagesGuideModal
-              isOpen={showLanguagesList}
-              onClose={() => setShowLanguagesList(false)}
-              activeTranslation={settings.translation}
-              onSelectTranslation={id => handleUpdateSettings({ translation: id })}
-              availableIds={TRANSLATIONS.map(t => t.id)}
-            />
-          )}
-        </AnimatePresence>
+        {/* Languages guide modal (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <AnimatePresence>
+            {showLanguagesList && (
+              <LanguagesGuideModal
+                isOpen={showLanguagesList}
+                onClose={() => setShowLanguagesList(false)}
+                activeTranslation={settings.translation}
+                onSelectTranslation={id => handleUpdateSettings({ translation: id })}
+                availableIds={TRANSLATIONS.map(t => t.id)}
+              />
+            )}
+          </AnimatePresence>
+        </Suspense>
 
-        {/* Book picker overlay */}
-        <BookPicker
-          isOpen={showBookPicker}
-          onClose={closeBookPicker}
-          selectedBook={selectedBook}
-          selectedChapter={selectedChapter}
-          translation={settings.translation}
-          pickerTab={pickerTab}
-          onPickerTabChange={setPickerTab}
-          showChapterPicker={showChapterPicker}
-          showVersePicker={showVersePicker}
-          pickedBook={pickedBook}
-          pickedChapter={pickedChapter}
-          availableVerses={availableVerses}
-          onSelectBook={handleSelectBookFromMenu}
-          onSelectChapter={handleSelectChapterFromMenu}
-          onSelectVerse={handleSelectVerseFromMenuWithScroll}
-          onBackToBooks={() => { setShowChapterPicker(false); setShowVersePicker(false); }}
-          onBackToChapters={() => { setShowChapterPicker(true); setShowVersePicker(false); }}
-        />
+        {/* Book picker overlay (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <BookPicker
+            isOpen={showBookPicker}
+            onClose={closeBookPicker}
+            selectedBook={selectedBook}
+            selectedChapter={selectedChapter}
+            translation={settings.translation}
+            pickerTab={pickerTab}
+            onPickerTabChange={setPickerTab}
+            showChapterPicker={showChapterPicker}
+            showVersePicker={showVersePicker}
+            pickedBook={pickedBook}
+            pickedChapter={pickedChapter}
+            availableVerses={availableVerses}
+            onSelectBook={handleSelectBookFromMenu}
+            onSelectChapter={handleSelectChapterFromMenu}
+            onSelectVerse={handleSelectVerseFromMenuWithScroll}
+            onBackToBooks={() => { setShowChapterPicker(false); setShowVersePicker(false); }}
+            onBackToChapters={() => { setShowChapterPicker(true); setShowVersePicker(false); }}
+          />
+        </Suspense>
 
         {/* Footer */}
         {!settings.zenMode && (

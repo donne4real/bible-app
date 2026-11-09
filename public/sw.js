@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wordup-africa-bible-v10';
+const CACHE_NAME = 'wordup-africa-bible-v11';
 
 // App shell — cached on install
 const SHELL_ASSETS = [
@@ -9,9 +9,15 @@ const SHELL_ASSETS = [
   '/icon-maskable.png',
 ];
 
-// All bundled Bible translation files — pre-cached so the app works
-// 100% offline immediately after the first install completes.
-const BIBLE_FILES = [
+// Pre-cache only the default translation (WEB) for fast first load.
+// Other translations are cached on-demand when users select them.
+// This reduces initial install from ~90MB to ~5MB.
+const PRECACHE_BIBLE_FILES = [
+  '/bibles/web.json',
+];
+
+// All Bible files for reference (cached on-demand, not pre-cached)
+const ALL_BIBLE_FILES = [
   '/bibles/web.json',
   '/bibles/kjv.json',
   '/bibles/lsg.json',
@@ -32,9 +38,10 @@ const BIBLE_FILES = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Cache shell immediately, then Bible files (large but critical)
+      // Cache shell immediately, then only the default Bible translation
+      // Other translations are cached on-demand when users select them
       return cache.addAll(SHELL_ASSETS)
-        .then(() => cache.addAll(BIBLE_FILES))
+        .then(() => cache.addAll(PRECACHE_BIBLE_FILES))
         .then(() => self.skipWaiting());
     })
   );

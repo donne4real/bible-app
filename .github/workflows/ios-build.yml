@@ -1,0 +1,74 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Add iOS platform (if not exists)
+        run: npx cap add ios || true
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install
+
+      - name: Build iOS (unsigned)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Create IPA (unsigned)
+        run: |
+          mkdir -p Payload
+          cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r bible-app-ios-unsigned.ipa Payload
+          
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bible-app-ios-unsigned
+          path: bible-app-ios-unsigned.ipa
+          retention-days: 30
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            ios/App/build/**/*.log
+            ~/Library/Logs/CoreSimulator/**/*.log

@@ -29,30 +29,11 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Debug - Check Capacitor
-        run: |
-          npx cap --version
-          ls -la node_modules/@capacitor/
-
       - name: Add iOS platform
-        run: |
-          npx cap add ios
-          echo "=== iOS folder contents ==="
-          ls -la ios/ || echo "ios folder not created"
-          ls -la ios/App/ || echo "ios/App folder not created"
-
-      - name: Debug - Check iOS structure
-        run: |
-          find ios -type f -name "*.plist" -o -name "Podfile" -o -name "*.xcodeproj" 2>/dev/null || echo "No iOS files found"
+        run: npx cap add ios
 
       - name: Sync Capacitor iOS
         run: npx cap sync ios
-
-      - name: Install CocoaPods
-        run: |
-          cd ios/App
-          ls -la
-          pod install
 
       - name: Build iOS (unsigned)
         run: |

@@ -70,7 +70,7 @@ jobs:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \

@@ -9,17 +9,20 @@ A fast, offline-first Bible reader with 22 translations in African and world lan
 ### Reading
 - **22 translations** — Yoruba, Igbo, Hausa, Twi, Pidgin, Swahili, Amharic, Afrikaans, Shona, Ndebele, Ewe, Haitian Creole, Arabic (RTL), French, KJV, WEB, ASV, BBE, YLT, NLT, AMP, NIV
 - **Offline-first** — 19 translations bundled as static JSON; works without internet
+### Reading Experience
+- **Sticky chapter indicator** — floating bar shows current book/chapter while scrolling
 - **6 reading fonts** — Playfair Display (default), Inter (sans), Literata, Merriweather, Noto Serif, JetBrains Mono
 - **4 themes** — Sepia, Light, Dark, OLED Charcoal (auto-switches with system preference)
 - **Zen mode** — distraction-free reading
 - **Swipe navigation** on mobile, keyboard arrows on desktop
 
 ### Study Tools
-- **Verse highlights** — 5 colors, persist across translations
+- **Verse highlights** — 5 colors, 2 styles (background/underline), persist across translations
 - **Notes** — attach reflections to any verse
 - **Bookmarks** — save your place in any chapter
 - **Cross-references** — tap a verse to see related passages
 - **Export/Import** — backup and restore study data as JSON
+- **Cloud sync** — sync highlights, notes, and bookmarks across devices (optional, requires account)
 
 ### Reading Plans
 - **New Testament in 30 Days** — ~9 chapters/day
@@ -56,6 +59,8 @@ A fast, offline-first Bible reader with 22 translations in African and world lan
 | Icons | Lucide React |
 | Testing | Jest + Testing Library |
 | Deployment | Cloudflare Workers |
+| Database | Cloudflare D1 (sync) |
+| Auth | JWT (30-day tokens) |
 | Android | Capacitor |
 
 ## Run Locally
@@ -110,22 +115,28 @@ src/
 │   ├── useStudyData.ts          # Highlights, notes, bookmarks + import
 │   ├── useSearch.ts             # Search + autocomplete + reference parsing
 │   ├── useReadingStreak.ts      # Reading streak tracking
-│   └── usePersistedState.ts     # localStorage-backed state hooks
+│   ├── usePersistedState.ts     # localStorage-backed state hooks
+│   ├── useSettings.ts           # Reader settings + theme helpers
+│   ├── useComparison.ts         # Translation comparison state
+│   └── useSync.ts               # Cloud sync (login, push, pull)
 ├── components/
 │   ├── BookPicker.tsx            # Book → chapter → verse picker modal
 │   ├── VerseLine.tsx             # Single verse renderer
 │   ├── HighlightToolbar.tsx      # Verse action toolbar (highlight, share, compare, cross-refs)
 │   ├── ReadingPlanPanel.tsx      # Reading plan selection + progress
 │   ├── DailyVerse.tsx            # Verse of the Day banner
-│   ├── Sidebar.tsx               # Study hub (notes, highlights, plans, streaks, export/import)
+│   ├── Sidebar.tsx               # Study hub (notes, highlights, plans, streaks, export/import, sync)
 │   ├── ShareCardModal.tsx        # Verse card generator
 │   ├── ThemeSelector.tsx         # Display settings panel (fonts, themes, spacing)
 │   ├── LanguagesGuideModal.tsx   # Translation info
+│   ├── SyncPanel.tsx             # Cloud sync login/register/push/pull UI
 │   └── ErrorBoundary.tsx         # Error recovery
 ├── test/
 │   └── setup.ts                  # Jest test setup
 worker/
-└── index.ts                      # Cloudflare Worker (api.bible proxy)
+├── index.ts                      # Cloudflare Worker (api.bible proxy + sync router)
+├── sync.ts                       # Sync API endpoints (auth, push, pull, delete)
+└── schema.sql                    # D1 database schema
 public/
 ├── bibles/                       # 19 bundled translation JSON files (~90MB total)
 ├── sw.js                         # Service worker (network-first HTML, cache-first assets)
@@ -156,6 +167,30 @@ public/
 ### Highlight Key Format
 Highlights use `{bookId}_{chapter}_{verse}` (translation-agnostic). Old `{translation}_{bookId}_{chapter}_{verse}` keys are auto-migrated on load.
 
+## Cloud Sync
+
+The app supports optional cross-device sync via Cloudflare D1.
+
+### How It Works
+1. User creates account (email/password) in Sidebar → Sync Panel
+2. Click "Push" to upload highlights, notes, bookmarks to cloud
+3. On another device, login and click "Pull" to download data
+4. Data merges with local storage (no data loss)
+
+### Architecture
+- **Database:** Cloudflare D1 (SQLite at the edge)
+- **Auth:** JWT tokens (30-day expiry)
+- **API:** `/api/sync/*` endpoints (register, login, push, pull, delete)
+- **Storage:** Still works offline with localStorage; sync is optional
+
+### Setup
+1. Create D1 database: `npx wrangler d1 create bible-app-db`
+2. Apply schema: `npx wrangler d1 execute bible-app-db --file=worker/schema.sql --remote`
+3. Set JWT secret: `npx wrangler secret put JWT_SECRET`
+4. Deploy: `npm run deploy`
+
+---
+
 ## Deployment
 
 ### Cloudflare Workers
@@ -168,6 +203,7 @@ This builds the app and deploys to Cloudflare Workers with static asset serving 
 | Variable | Required | Description |
 |---|---|---|
 | `API_BIBLE_KEY` | For NLT/AMP/NIV | [api.bible](https://scripture.api.bible/) API key |
+| `JWT_SECRET` | For sync | Secret key for JWT token signing |
 | `GEMINI_API_KEY` | No | For AI features (optional) |
 
 ### Service Worker

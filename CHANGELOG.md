@@ -2,6 +2,34 @@
 
 All notable changes to Bible in African Languages.
 
+## [2.4.0] — 2026-11-09
+
+### New Features
+- **Cloud sync** — Cross-device sync for highlights, notes, and bookmarks via Cloudflare D1. Users can create accounts, push data to cloud, and pull on other devices. JWT authentication with 30-day tokens.
+- **Highlight list view** — Searchable list of all highlights sorted by date (newest first) in Sidebar.
+- **Highlight color filter** — Filter highlights by color in Sidebar with color dot buttons.
+- **Highlight date display** — Each highlight now shows when it was created.
+- **Underline highlight style** — Toggle between background fill and underline styles in the highlight toolbar.
+- **Sticky chapter indicator** — Fixed floating bar showing current book/chapter while scrolling through Bible content.
+- **Improved dark mode highlights** — Brighter, more visible highlight colors in dark mode.
+
+### Architecture
+- **Extracted hooks** — `useComparison` and `useSettings` hooks extracted from App.tsx for better separation of concerns.
+- **Code splitting** — React.lazy for Sidebar, ShareCardModal, LanguagesGuideModal, BookPicker components.
+- **Service worker optimization** — Pre-caches only WEB translation (~5MB) instead of all 19 translations (~90MB). Other translations cached on-demand.
+- **New sync infrastructure** — `worker/sync.ts` for API endpoints, `worker/schema.sql` for D1 schema, `useSync` hook for client-side sync.
+- **New components** — `SyncPanel` for login/register/sync UI in Sidebar footer.
+
+### Bug Fixes
+- **chronoPlan.ts import** — Fixed incorrect import path (`../types` → `./types`).
+- **activeTrans ordering** — Fixed variable reference error causing blank page.
+- **Package rename** — Updated from `wordup-africa-bible-reader` to `bible-in-african-languages`.
+
+### Database
+- **Cloudflare D1** — New `bible-app-db` database with tables: users, highlights, notes, bookmarks, user_settings.
+
+---
+
 ## [2.3.0] — 2026-09-27
 
 ### New Features

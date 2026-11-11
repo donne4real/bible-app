@@ -37,6 +37,9 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
+      - name: Generate app icons and splash screens
+        run: npx capacitor-assets generate --ios
+
       - name: Import certificates
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}

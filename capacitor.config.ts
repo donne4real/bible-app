@@ -13,16 +13,24 @@ const config: CapacitorConfig = {
       keystoreAlias: 'my-key-alias',
     },
   },
+  ios: {
+    scheme: 'App',
+    webContentsDebuggingEnabled: false,
+    limitsNavigationsToAppDomain: true,
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#EADFCA',
       androidSplashResourceName: 'splash',
       showSpinner: false,
+      iosScaleType: 'ASPECT_FILL',
+      launchAutoHide: true,
     },
     StatusBar: {
       style: 'LIGHT',
       backgroundColor: '#FFFFFF',
+      overlays: true,
     },
   },
 };

@@ -18,6 +18,10 @@
     "download-door43": "node scripts/download-door43.mjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:build:unsigned": "npm run ios:sync && cd ios/App && xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO",
+    "generate-assets": "npx capacitor-assets generate",
     "worker:dev": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy"
   },
@@ -38,6 +42,7 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
     "@cloudflare/workers-types": "^5.20260904.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

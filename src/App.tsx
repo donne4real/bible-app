@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { usePersistedJSONState } from './hooks/usePersistedState';
 import { useBibleNavigation } from './hooks/useBibleNavigation';
 import { useStudyData } from './hooks/useStudyData';
+import { useAutoSync } from './hooks/useAutoSync';
 import { useSearch } from './hooks/useSearch';
 import { useReadingStreak } from './hooks/useReadingStreak';
 import { useSettings } from './hooks/useSettings';
@@ -150,6 +151,9 @@ export default function App() {
     handleDeleteBookmarkById,
     handleImportData,
   } = useStudyData();
+
+  // ── Auto-sync ─────────────────────────────────────────────────────────
+  const { status: syncStatus, lastSynced: autoLastSynced, pushNow, pullNow } = useAutoSync(highlights, notes, bookmarks);
 
   // ── Reader state ──────────────────────────────────────────────────────
   const [verses, setVerses] = useState<Verse[]>([]);
@@ -464,6 +468,10 @@ export default function App() {
               // Merge synced data with local data
               handleImportData(data);
             }}
+            syncStatus={syncStatus}
+            autoLastSynced={autoLastSynced}
+            onPushNow={pushNow}
+            onPullNow={pullNow}
             readingPlanSlot={
               <ReadingPlanPanel
                 progress={planProgress}

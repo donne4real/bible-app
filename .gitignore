@@ -25,3 +25,6 @@ superseded/
 
 # Claude Code local settings
 .claude/
+
+# Downloaded iOS build artifacts
+ios-builds/

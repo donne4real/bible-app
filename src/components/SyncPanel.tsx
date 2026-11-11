@@ -4,18 +4,23 @@
  */
 
 import React, { useState } from 'react';
-import { Cloud, CloudOff, LogIn, UserPlus, LogOut, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Cloud, CloudOff, LogIn, UserPlus, LogOut, RefreshCw, Check, AlertCircle, CloudLightning } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
 import { Highlight, Note, Bookmark } from '../types';
+import { SyncStatus } from '../hooks/useAutoSync';
 
 interface SyncPanelProps {
   highlights: Highlight[];
   notes: Note[];
   bookmarks: Bookmark[];
   onSyncComplete: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: Bookmark[] }) => void;
+  syncStatus?: SyncStatus;
+  autoLastSynced?: number | null;
+  onPushNow?: () => Promise<boolean>;
+  onPullNow?: () => Promise<void>;
 }
 
-export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete }: SyncPanelProps) {
+export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete, syncStatus, autoLastSynced, onPushNow, onPullNow }: SyncPanelProps) {
   const { user, isLoggedIn, isSyncing, lastSynced, login, register, logout, pushToCloud, pullFromCloud } = useSync();
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [email, setEmail] = useState('');
@@ -75,7 +80,15 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
       <div className="p-3 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Cloud className="w-4 h-4 text-emerald-500" />
+            {syncStatus === 'syncing' ? (
+              <RefreshCw className="w-4 h-4 text-sky-500 animate-spin" />
+            ) : syncStatus === 'pending' ? (
+              <CloudLightning className="w-4 h-4 text-amber-500" />
+            ) : syncStatus === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-rose-500" />
+            ) : (
+              <Cloud className="w-4 h-4 text-emerald-500" />
+            )}
             <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]">
               {user?.email}
             </span>
@@ -89,27 +102,51 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
           </button>
         </div>
 
-        {lastSynced && (
-          <div className="text-[9px] text-zinc-400 font-mono">
-            Last synced: {new Date(lastSynced).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
+        {/* Auto-sync status */}
+        <div className="text-[9px] font-mono flex items-center gap-1.5">
+          {syncStatus === 'syncing' && <span className="text-sky-500">Syncing...</span>}
+          {syncStatus === 'pending' && <span className="text-amber-500">Changes pending...</span>}
+          {syncStatus === 'error' && <span className="text-rose-500">Sync failed — retrying</span>}
+          {syncStatus === 'idle' && (autoLastSynced || lastSynced) && (
+            <span className="text-zinc-400">
+              Synced {new Date(autoLastSynced || lastSynced!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {syncStatus === 'idle' && !(autoLastSynced || lastSynced) && (
+            <span className="text-emerald-500">Auto-sync on</span>
+          )}
+        </div>
 
         <div className="flex gap-2">
           <button
-            onClick={handlePush}
-            disabled={isSyncing}
+            onClick={async () => {
+              if (onPushNow) {
+                const ok = await onPushNow();
+                if (ok) { setSuccess('Synced!'); setTimeout(() => setSuccess(null), 2000); }
+                else { setError('Sync failed'); }
+              } else {
+                handlePush();
+              }
+            }}
+            disabled={isSyncing || syncStatus === 'syncing'}
             className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold transition disabled:opacity-50"
           >
             <Cloud className="w-3 h-3" />
             Push
           </button>
           <button
-            onClick={handlePull}
-            disabled={isSyncing}
+            onClick={async () => {
+              if (onPullNow) {
+                await onPullNow();
+                setSuccess('Pulled!'); setTimeout(() => setSuccess(null), 2000);
+              } else {
+                handlePull();
+              }
+            }}
+            disabled={isSyncing || syncStatus === 'syncing'}
             className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${(isSyncing || syncStatus === 'syncing') ? 'animate-spin' : ''}`} />
             Pull
           </button>
         </div>

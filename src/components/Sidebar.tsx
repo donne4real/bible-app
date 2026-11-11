@@ -8,6 +8,7 @@ import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X,
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
 import { exportStudyData, importStudyData, mergeStudyData } from '../exportImport';
 import SyncPanel from './SyncPanel';
+import { SyncStatus } from '../hooks/useAutoSync';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +26,10 @@ interface SidebarProps {
   totalDaysRead?: number;
   onImportData?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
   onSyncComplete?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
+  syncStatus?: SyncStatus;
+  autoLastSynced?: number | null;
+  onPushNow?: () => Promise<boolean>;
+  onPullNow?: () => Promise<void>;
 }
 
 export default function Sidebar({
@@ -43,6 +48,10 @@ export default function Sidebar({
   totalDaysRead = 0,
   onImportData,
   onSyncComplete,
+  syncStatus,
+  autoLastSynced,
+  onPushNow,
+  onPullNow,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<'notes' | 'highlights' | 'bookmarks' | 'plans'>('notes');
   const [searchQuery, setSearchQuery] = useState('');
@@ -388,6 +397,10 @@ export default function Sidebar({
               onSyncComplete(data);
             }
           }}
+          syncStatus={syncStatus}
+          autoLastSynced={autoLastSynced}
+          onPushNow={onPushNow}
+          onPullNow={onPullNow}
         />
 
         {importStatus && (

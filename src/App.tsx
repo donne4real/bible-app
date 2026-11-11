@@ -27,12 +27,9 @@ import { getVerses, searchWholeBible, matchesSearch, findMatchRange, isRemoteTra
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata, ReadingPlanProgress } from './types';
 import { TRANSLATIONS } from './translations';
 import { STORAGE_KEYS, CACHE_LIMITS, SCROLL_DELAY_MS, HIGHLIGHT_REMOVE_DELAY_MS } from './constants';
-import { READING_PLANS } from './readingPlans';
 import ThemeSelector from './components/ThemeSelector';
 import HighlightToolbar, { getHighlightClass } from './components/HighlightToolbar';
 import VerseLine from './components/VerseLine';
-import DailyVerse from './components/DailyVerse';
-import ReadingPlanPanel from './components/ReadingPlanPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePersistedJSONState } from './hooks/usePersistedState';
@@ -48,6 +45,8 @@ const Sidebar = lazy(() => import('./components/Sidebar'));
 const ShareCardModal = lazy(() => import('./components/ShareCardModal'));
 const LanguagesGuideModal = lazy(() => import('./components/LanguagesGuideModal'));
 const BookPicker = lazy(() => import('./components/BookPicker'));
+const DailyVerse = lazy(() => import('./components/DailyVerse'));
+const ReadingPlanPanel = lazy(() => import('./components/ReadingPlanPanel'));
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;

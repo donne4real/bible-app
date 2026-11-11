@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns, Link, MessageCircle } from 'lucide-react';
 import { Verse, Highlight, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { getCrossReferences, parseCrossRef } from '../crossReferences';
 
 interface HighlightToolbarProps {
   selectedVerses: Verse[];
@@ -72,6 +71,22 @@ export default function HighlightToolbar({
   const [noteText, setNoteText] = useState(existingNoteText);
   const [noteSaved, setNoteSaved] = useState(false);
   const [highlightStyle, setHighlightStyle] = useState<HighlightStyle>('background');
+  const [crossRefModule, setCrossRefModule] = useState<{
+    getCrossReferences: (bookId: string, chapter: number, verse: number) => string[] | null;
+    parseCrossRef: (ref: string) => { bookId: string; chapter: number; verse: number } | null;
+  } | null>(null);
+
+  // Dynamically import cross-references data (only loaded when toolbar is shown)
+  useEffect(() => {
+    if (selectedVerses.length > 0 && !crossRefModule) {
+      import('../crossReferences').then(mod => {
+        setCrossRefModule({
+          getCrossReferences: mod.getCrossReferences,
+          parseCrossRef: mod.parseCrossRef,
+        });
+      });
+    }
+  }, [selectedVerses.length, crossRefModule]);
 
   // Sync state if selection shifts
   React.useEffect(() => {
@@ -267,9 +282,9 @@ export default function HighlightToolbar({
           )}
 
           {/* Cross-references — shown when a single verse is selected */}
-          {!showNoteEditor && selectedVerses.length === 1 && (() => {
+          {!showNoteEditor && selectedVerses.length === 1 && crossRefModule && (() => {
             const v = selectedVerses[0];
-            const refs = getCrossReferences(v.book_id, v.chapter, v.verse);
+            const refs = crossRefModule.getCrossReferences(v.book_id, v.chapter, v.verse);
             if (!refs || refs.length === 0) return null;
             return (
               <div className="border-t border-zinc-800 pt-2.5">
@@ -279,7 +294,7 @@ export default function HighlightToolbar({
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {refs.slice(0, 6).map(ref => {
-                    const parsed = parseCrossRef(ref);
+                    const parsed = crossRefModule.parseCrossRef(ref);
                     if (!parsed) return null;
                     return (
                       <button

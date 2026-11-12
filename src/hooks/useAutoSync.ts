@@ -41,6 +41,7 @@ export function useAutoSync(
   const pullIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInitialMount = useRef(true);
   const dataRef = useRef({ highlights, notes, bookmarks });
+  const isPullingRef = useRef(false); // Track if we're currently pulling to avoid push loop
 
   // Keep ref in sync with current data
   useEffect(() => {
@@ -70,6 +71,12 @@ export function useAutoSync(
     if (!isLoggedIn) return;
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      prevDataRef.current = getDataKey();
+      return;
+    }
+
+    // Skip auto-push if data change came from a pull (avoid sync loop)
+    if (isPullingRef.current) {
       prevDataRef.current = getDataKey();
       return;
     }
@@ -117,11 +124,16 @@ export function useAutoSync(
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        isPullingRef.current = true;
         pullFromCloud().then((data) => {
           if (data && onDataPulled) {
             onDataPulled(data);
           }
           setLastSynced(Date.now());
+          // Reset flag after a short delay to let state updates settle
+          setTimeout(() => { isPullingRef.current = false; }, 500);
+        }).catch(() => {
+          isPullingRef.current = false;
         });
       }
     };
@@ -136,18 +148,20 @@ export function useAutoSync(
 
     pullIntervalRef.current = setInterval(async () => {
       if (document.visibilityState === 'visible') {
+        isPullingRef.current = true;
         const data = await pullFromCloud();
         if (data && onDataPulled) {
           onDataPulled(data);
         }
         setLastSynced(Date.now());
+        setTimeout(() => { isPullingRef.current = false; }, 500);
       }
     }, AUTO_PULL_INTERVAL);
 
     return () => {
       if (pullIntervalRef.current) clearInterval(pullIntervalRef.current);
     };
-  }, [isLoggedIn, pullFromCloud]);
+  }, [isLoggedIn, pullFromCloud, onDataPulled]);
 
   // Manual push/pull
   const pushNow = useCallback(async () => {
@@ -162,12 +176,14 @@ export function useAutoSync(
 
   const pullNow = useCallback(async () => {
     setStatus('syncing');
+    isPullingRef.current = true;
     const data = await pullFromCloud();
     if (data && onDataPulled) {
       onDataPulled(data);
     }
     setStatus('idle');
     setLastSynced(Date.now());
+    setTimeout(() => { isPullingRef.current = false; }, 500);
     return data;
   }, [pullFromCloud, onDataPulled]);
 

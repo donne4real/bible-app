@@ -133,14 +133,11 @@ export function useStudyData() {
 
   // ── Import ──────────────────────────────────────────────────────────
   const handleImportData = useCallback((imported: { highlights: Highlight[]; notes: Note[]; bookmarks: Bookmark[] }) => {
-    console.log('[StudyData] handleImportData called with:', `${imported.highlights.length} highlights, ${imported.notes.length} notes, ${imported.bookmarks.length} bookmarks`);
     setHighlights(prev => {
       const map = new Map<string, Highlight>();
       for (const h of prev) map.set(h.id, h);
       for (const h of imported.highlights) map.set(h.id, h);
-      const result = Array.from(map.values());
-      console.log('[StudyData] Merged highlights:', `${prev.length} + ${imported.highlights.length} = ${result.length}`);
-      return result;
+      return Array.from(map.values());
     });
     setNotes(prev => {
       const map = new Map<string, Note>();

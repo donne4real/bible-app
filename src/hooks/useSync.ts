@@ -163,11 +163,11 @@ export function useSync(): UseSyncReturn {
           bookmarks: data.bookmarks || [],
         };
       }
-      
+
       if (res.status === 401) {
         logout();
       }
-      
+
       return null;
     } catch (err) {
       return null;

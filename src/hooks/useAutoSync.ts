@@ -187,19 +187,15 @@ export function useAutoSync(
     setStatus('syncing');
     isPullingRef.current = true;
     try {
-      console.log('[AutoSync] Pulling from cloud...');
       const data = await pullFromCloud();
-      console.log('[AutoSync] Pull result:', data ? `${data.highlights.length} highlights, ${data.notes.length} notes, ${data.bookmarks.length} bookmarks` : 'null');
       if (data && onDataPulled) {
-        console.log('[AutoSync] Calling onDataPulled with data');
         onDataPulled(data);
       }
       setStatus('idle');
       setLastSynced(Date.now());
       setTimeout(() => { isPullingRef.current = false; }, 1000);
       return data;
-    } catch (err) {
-      console.error('[AutoSync] Pull error:', err);
+    } catch {
       setStatus('error');
       isPullingRef.current = false;
       return null;

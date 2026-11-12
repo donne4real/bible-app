@@ -61,7 +61,6 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
     const data = await pullFromCloud();
     if (data) {
       onSyncComplete(data);
-      alert(`Pulled: ${data.highlights.length} highlights, ${data.notes.length} notes, ${data.bookmarks.length} bookmarks`);
       setSuccess('Data loaded from cloud!');
       setTimeout(() => setSuccess(null), 2000);
     } else {
@@ -138,10 +137,7 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
           <button
             onClick={async () => {
               if (onPullNow) {
-                const data = await onPullNow();
-                if (data) {
-                  alert(`Pulled: ${data.highlights.length} highlights, ${data.notes.length} notes, ${data.bookmarks.length} bookmarks`);
-                }
+                await onPullNow();
                 setSuccess('Pulled!'); setTimeout(() => setSuccess(null), 2000);
               } else {
                 handlePull();

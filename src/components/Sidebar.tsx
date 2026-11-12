@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload, Cloud } from 'lucide-react';
+import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload, Cloud, TrendingUp } from 'lucide-react';
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
 import { exportStudyData, importStudyData, mergeStudyData } from '../exportImport';
 import SyncPanel from './SyncPanel';
@@ -24,6 +24,7 @@ interface SidebarProps {
   currentStreak?: number;
   longestStreak?: number;
   totalDaysRead?: number;
+  onOpenStats?: () => void;
   onImportData?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
   onSyncComplete?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
   syncStatus?: SyncStatus;
@@ -46,6 +47,7 @@ export default function Sidebar({
   currentStreak = 0,
   longestStreak = 0,
   totalDaysRead = 0,
+  onOpenStats,
   onImportData,
   onSyncComplete,
   syncStatus,
@@ -113,13 +115,25 @@ export default function Sidebar({
           <BookOpen className="w-5 h-5 text-amber-500" />
           <h2 className="font-sans font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100">My Study Hub</h2>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Close study hub"
-          className="p-1 px-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenStats && (
+            <button
+              onClick={onOpenStats}
+              aria-label="View reading statistics"
+              className="p-1 px-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 transition"
+              title="Reading Statistics"
+            >
+              <TrendingUp className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Close study hub"
+            className="p-1 px-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Reading Streak */}
@@ -136,6 +150,14 @@ export default function Sidebar({
               </div>
             </div>
           </div>
+          {onOpenStats && (
+            <button
+              onClick={onOpenStats}
+              className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 transition px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50"
+            >
+              View Stats →
+            </button>
+          )}
         </div>
       )}
 

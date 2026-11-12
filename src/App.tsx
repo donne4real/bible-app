@@ -37,7 +37,7 @@ import { useBibleNavigation } from './hooks/useBibleNavigation';
 import { useStudyData } from './hooks/useStudyData';
 import { useAutoSync } from './hooks/useAutoSync';
 import { useSearch } from './hooks/useSearch';
-import { useReadingStreak } from './hooks/useReadingStreak';
+import { useReadingStats } from './hooks/useReadingStats';
 import { useSettings } from './hooks/useSettings';
 import { useComparison } from './hooks/useComparison';
 
@@ -48,6 +48,7 @@ const LanguagesGuideModal = lazy(() => import('./components/LanguagesGuideModal'
 const BookPicker = lazy(() => import('./components/BookPicker'));
 const DailyVerse = lazy(() => import('./components/DailyVerse'));
 const ReadingPlanPanel = lazy(() => import('./components/ReadingPlanPanel'));
+const ReadingStatsPanel = lazy(() => import('./components/ReadingStatsPanel'));
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;
@@ -218,8 +219,10 @@ export default function App() {
     });
   }, [setPlanProgress]);
 
-  // ── Reading streak ───────────────────────────────────────────────────
-  const { currentStreak, longestStreak, totalDaysRead, recordRead } = useReadingStreak();
+  // ── Reading statistics ───────────────────────────────────────────────
+  const { recordChapterRead, getStreak, stats: readingStats } = useReadingStats();
+  const streak = getStreak();
+  const [showReadingStats, setShowReadingStats] = useState(false);
 
   // ── Selection ─────────────────────────────────────────────────────────
   const [selectedVerses, setSelectedVerses] = useState<Verse[]>([]);
@@ -261,7 +264,7 @@ export default function App() {
         if (!active) return;
         if (result && result.length > 0) {
           setVerses(result);
-          recordRead();
+          recordChapterRead(selectedBook.id, selectedChapter);
         } else {
           setVerses([]);
           setErrorStatus(`${getLocalizedBookName(selectedBook.id, settings.translation, selectedBook.name)} ${selectedChapter} is not available in the ${activeTrans?.short || settings.translation.toUpperCase()} translation.`);
@@ -460,9 +463,10 @@ export default function App() {
             onDeleteNote={handleDeleteNoteById}
             onDeleteBookmark={handleDeleteBookmarkById}
             onNavigateTo={handleNavigateSidebar}
-            currentStreak={currentStreak}
-            longestStreak={longestStreak}
-            totalDaysRead={totalDaysRead}
+            currentStreak={streak.current}
+            longestStreak={streak.longest}
+            totalDaysRead={readingStats.sessions.length > 0 ? new Set(readingStats.sessions.map(s => s.date)).size : 0}
+            onOpenStats={() => setShowReadingStats(true)}
             onImportData={handleImportData}
             onSyncComplete={(data) => {
               // Merge synced data with local data
@@ -1032,6 +1036,11 @@ export default function App() {
         {/* Share card modal (lazy-loaded) */}
         <Suspense fallback={null}>
           <ShareCardModal isOpen={showShareCard} onClose={() => setShowShareCard(false)} selectedVerses={selectedVerses} translation={settings.translation} />
+        </Suspense>
+
+        {/* Reading stats panel (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <ReadingStatsPanel isOpen={showReadingStats} onClose={() => setShowReadingStats(false)} />
         </Suspense>
 
         {/* Languages guide modal (lazy-loaded) */}

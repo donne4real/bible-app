@@ -125,14 +125,17 @@ export function useAutoSync(
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         isPullingRef.current = true;
+        setStatus('syncing');
         pullFromCloud().then((data) => {
           if (data && onDataPulled) {
             onDataPulled(data);
           }
           setLastSynced(Date.now());
-          // Reset flag after a short delay to let state updates settle
-          setTimeout(() => { isPullingRef.current = false; }, 500);
+          setStatus('idle');
+          // Reset flag after state updates settle (longer for large datasets)
+          setTimeout(() => { isPullingRef.current = false; }, 1000);
         }).catch(() => {
+          setStatus('error');
           isPullingRef.current = false;
         });
       }
@@ -149,12 +152,18 @@ export function useAutoSync(
     pullIntervalRef.current = setInterval(async () => {
       if (document.visibilityState === 'visible') {
         isPullingRef.current = true;
-        const data = await pullFromCloud();
-        if (data && onDataPulled) {
-          onDataPulled(data);
+        setStatus('syncing');
+        try {
+          const data = await pullFromCloud();
+          if (data && onDataPulled) {
+            onDataPulled(data);
+          }
+          setLastSynced(Date.now());
+          setStatus('idle');
+        } catch {
+          setStatus('error');
         }
-        setLastSynced(Date.now());
-        setTimeout(() => { isPullingRef.current = false; }, 500);
+        setTimeout(() => { isPullingRef.current = false; }, 1000);
       }
     }, AUTO_PULL_INTERVAL);
 
@@ -177,14 +186,20 @@ export function useAutoSync(
   const pullNow = useCallback(async () => {
     setStatus('syncing');
     isPullingRef.current = true;
-    const data = await pullFromCloud();
-    if (data && onDataPulled) {
-      onDataPulled(data);
+    try {
+      const data = await pullFromCloud();
+      if (data && onDataPulled) {
+        onDataPulled(data);
+      }
+      setStatus('idle');
+      setLastSynced(Date.now());
+      setTimeout(() => { isPullingRef.current = false; }, 1000);
+      return data;
+    } catch {
+      setStatus('error');
+      isPullingRef.current = false;
+      return null;
     }
-    setStatus('idle');
-    setLastSynced(Date.now());
-    setTimeout(() => { isPullingRef.current = false; }, 500);
-    return data;
   }, [pullFromCloud, onDataPulled]);
 
   // Update status when useSync reports syncing

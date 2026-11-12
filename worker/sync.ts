@@ -230,7 +230,10 @@ async function handleDelete(request: Request, env: Env, userId: string): Promise
 // Main sync router
 export async function handleSyncRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const path = url.pathname.replace('/api/sync/', '');
+  // Handle both /api/sync and /api/sync/ (with or without trailing slash)
+  let path = url.pathname.replace('/api/sync', '');
+  if (path.startsWith('/')) path = path.slice(1);
+  if (path.endsWith('/')) path = path.slice(0, -1);
 
   // Auth routes (no token required)
   if (path === 'register' && request.method === 'POST') {

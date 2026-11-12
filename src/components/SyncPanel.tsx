@@ -17,7 +17,7 @@ interface SyncPanelProps {
   syncStatus?: SyncStatus;
   autoLastSynced?: number | null;
   onPushNow?: () => Promise<boolean>;
-  onPullNow?: () => Promise<void>;
+  onPullNow?: () => Promise<{ highlights: any[]; notes: any[]; bookmarks: any[] } | null>;
 }
 
 export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete, syncStatus, autoLastSynced, onPushNow, onPullNow }: SyncPanelProps) {
@@ -61,6 +61,7 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
     const data = await pullFromCloud();
     if (data) {
       onSyncComplete(data);
+      alert(`Pulled: ${data.highlights.length} highlights, ${data.notes.length} notes, ${data.bookmarks.length} bookmarks`);
       setSuccess('Data loaded from cloud!');
       setTimeout(() => setSuccess(null), 2000);
     } else {
@@ -137,7 +138,10 @@ export default function SyncPanel({ highlights, notes, bookmarks, onSyncComplete
           <button
             onClick={async () => {
               if (onPullNow) {
-                await onPullNow();
+                const data = await onPullNow();
+                if (data) {
+                  alert(`Pulled: ${data.highlights.length} highlights, ${data.notes.length} notes, ${data.bookmarks.length} bookmarks`);
+                }
                 setSuccess('Pulled!'); setTimeout(() => setSuccess(null), 2000);
               } else {
                 handlePull();

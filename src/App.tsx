@@ -153,7 +153,7 @@ export default function App() {
   } = useStudyData();
 
   // ── Auto-sync ─────────────────────────────────────────────────────────
-  const { status: syncStatus, lastSynced: autoLastSynced, pushNow, pullNow } = useAutoSync(highlights, notes, bookmarks);
+  const { status: syncStatus, lastSynced: autoLastSynced, pushNow, pullNow } = useAutoSync(highlights, notes, bookmarks, handleImportData);
 
   // ── Reader state ──────────────────────────────────────────────────────
   const [verses, setVerses] = useState<Verse[]>([]);

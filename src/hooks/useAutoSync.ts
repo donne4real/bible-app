@@ -12,17 +12,24 @@ const AUTO_PULL_INTERVAL = 5 * 60 * 1000; // Pull every 5 minutes when app is fo
 
 export type SyncStatus = 'idle' | 'syncing' | 'pending' | 'error' | 'offline';
 
+interface SyncData {
+  highlights: Highlight[];
+  notes: Note[];
+  bookmarks: Bookmark[];
+}
+
 interface UseAutoSyncReturn {
   status: SyncStatus;
   lastSynced: number | null;
   pushNow: () => Promise<boolean>;
-  pullNow: () => Promise<void>;
+  pullNow: () => Promise<SyncData | null>;
 }
 
 export function useAutoSync(
   highlights: Highlight[],
   notes: Note[],
   bookmarks: Bookmark[],
+  onDataPulled?: (data: SyncData) => void,
 ): UseAutoSyncReturn {
   const { isLoggedIn, isSyncing, lastSynced: rawLastSynced, pushToCloud, pullFromCloud } = useSync();
 
@@ -110,7 +117,10 @@ export function useAutoSync(
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        pullFromCloud().then(() => {
+        pullFromCloud().then((data) => {
+          if (data && onDataPulled) {
+            onDataPulled(data);
+          }
           setLastSynced(Date.now());
         });
       }
@@ -118,7 +128,7 @@ export function useAutoSync(
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isLoggedIn, pullFromCloud]);
+  }, [isLoggedIn, pullFromCloud, onDataPulled]);
 
   // Periodic auto-pull while app is focused
   useEffect(() => {
@@ -126,7 +136,10 @@ export function useAutoSync(
 
     pullIntervalRef.current = setInterval(async () => {
       if (document.visibilityState === 'visible') {
-        await pullFromCloud();
+        const data = await pullFromCloud();
+        if (data && onDataPulled) {
+          onDataPulled(data);
+        }
         setLastSynced(Date.now());
       }
     }, AUTO_PULL_INTERVAL);
@@ -149,10 +162,14 @@ export function useAutoSync(
 
   const pullNow = useCallback(async () => {
     setStatus('syncing');
-    await pullFromCloud();
+    const data = await pullFromCloud();
+    if (data && onDataPulled) {
+      onDataPulled(data);
+    }
     setStatus('idle');
     setLastSynced(Date.now());
-  }, [pullFromCloud]);
+    return data;
+  }, [pullFromCloud, onDataPulled]);
 
   // Update status when useSync reports syncing
   useEffect(() => {

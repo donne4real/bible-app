@@ -24,6 +24,7 @@ import {
 import { BIBLE_BOOKS } from './bibleStructure';
 import { getLocalizedBookName } from './bookNames';
 import { getVerses, searchWholeBible, matchesSearch, findMatchRange, isRemoteTranslation } from './bibleLoader';
+import { DAILY_VERSES } from './dailyVerse';
 import { Verse, Highlight, Note, Bookmark as BookMarkType, ReaderSettings, BookMetadata, ReadingPlanProgress } from './types';
 import { TRANSLATIONS } from './translations';
 import { STORAGE_KEYS, CACHE_LIMITS, SCROLL_DELAY_MS, HIGHLIGHT_REMOVE_DELAY_MS } from './constants';
@@ -40,6 +41,7 @@ import { useSearch } from './hooks/useSearch';
 import { useReadingStats } from './hooks/useReadingStats';
 import { useSettings } from './hooks/useSettings';
 import { useComparison } from './hooks/useComparison';
+import { loadNotificationSettings, startNotificationScheduler, stopNotificationScheduler, showDailyVerseNotification, showStreakReminderNotification } from './utils/notifications';
 
 // Code-split heavy components that aren't needed on initial render
 const Sidebar = lazy(() => import('./components/Sidebar'));
@@ -50,6 +52,7 @@ const DailyVerse = lazy(() => import('./components/DailyVerse'));
 const ReadingPlanPanel = lazy(() => import('./components/ReadingPlanPanel'));
 const ReadingStatsPanel = lazy(() => import('./components/ReadingStatsPanel'));
 const VerseImageModal = lazy(() => import('./components/VerseImageModal'));
+const NotificationSettingsPanel = lazy(() => import('./components/NotificationSettingsPanel'));
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;
@@ -198,6 +201,7 @@ export default function App() {
   const [showShareCard, setShowShareCard] = useState(false);
   const [showVerseImage, setShowVerseImage] = useState(false);
   const [showLanguagesList, setShowLanguagesList] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
   // ── Reading plans ─────────────────────────────────────────────────────
   const [planProgress, setPlanProgress] = usePersistedJSONState<ReadingPlanProgress | null>(
@@ -225,6 +229,28 @@ export default function App() {
   const { recordChapterRead, getStreak, stats: readingStats } = useReadingStats();
   const streak = getStreak();
   const [showReadingStats, setShowReadingStats] = useState(false);
+
+  // ── Notifications ───────────────────────────────────────────────────
+  useEffect(() => {
+    startNotificationScheduler(
+      loadNotificationSettings,
+      () => {
+        // Daily verse notification
+        const today = new Date();
+        const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+        const verse = DAILY_VERSES[dayOfYear % DAILY_VERSES.length];
+        if (verse) {
+          showDailyVerseNotification(verse.text, `${verse.bookName} ${verse.chapter}:${verse.verse}`);
+        }
+      },
+      () => {
+        // Streak reminder notification
+        showStreakReminderNotification(streak.current);
+      }
+    );
+
+    return () => stopNotificationScheduler();
+  }, [streak.current]);
 
   // ── Selection ─────────────────────────────────────────────────────────
   const [selectedVerses, setSelectedVerses] = useState<Verse[]>([]);
@@ -469,6 +495,7 @@ export default function App() {
             longestStreak={streak.longest}
             totalDaysRead={readingStats.sessions.length > 0 ? new Set(readingStats.sessions.map(s => s.date)).size : 0}
             onOpenStats={() => setShowReadingStats(true)}
+            onOpenNotifications={() => setShowNotificationSettings(true)}
             onImportData={handleImportData}
             onSyncComplete={(data) => {
               // Merge synced data with local data
@@ -1049,6 +1076,11 @@ export default function App() {
         {/* Reading stats panel (lazy-loaded) */}
         <Suspense fallback={null}>
           <ReadingStatsPanel isOpen={showReadingStats} onClose={() => setShowReadingStats(false)} />
+        </Suspense>
+
+        {/* Notification settings panel (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <NotificationSettingsPanel isOpen={showNotificationSettings} onClose={() => setShowNotificationSettings(false)} />
         </Suspense>
 
         {/* Languages guide modal (lazy-loaded) */}

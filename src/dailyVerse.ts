@@ -14,7 +14,7 @@ interface DailyVerseEntry {
   text: string;
 }
 
-const DAILY_VERSES: DailyVerseEntry[] = [
+export const DAILY_VERSES: DailyVerseEntry[] = [
   // ── 1-52: Original curated set ─────────────────────────────────────────
   { bookId: 'JHN', bookName: 'John', chapter: 3, verse: 16, text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.' },
   { bookId: 'PSA', bookName: 'Psalms', chapter: 23, verse: 1, text: 'The Lord is my shepherd; I shall not want.' },

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload, Cloud, TrendingUp } from 'lucide-react';
+import { BookOpen, Highlighter, FileText, Bookmark, Calendar, Trash2, Search, X, ChevronRight, Check, BookMarked, Download, Upload, Cloud, TrendingUp, Bell } from 'lucide-react';
 import { Highlight, Note, Bookmark as BookMarkType } from '../types';
 import { exportStudyData, importStudyData, mergeStudyData } from '../exportImport';
 import SyncPanel from './SyncPanel';
@@ -25,6 +25,7 @@ interface SidebarProps {
   longestStreak?: number;
   totalDaysRead?: number;
   onOpenStats?: () => void;
+  onOpenNotifications?: () => void;
   onImportData?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
   onSyncComplete?: (data: { highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] }) => void;
   syncStatus?: SyncStatus;
@@ -48,6 +49,7 @@ export default function Sidebar({
   longestStreak = 0,
   totalDaysRead = 0,
   onOpenStats,
+  onOpenNotifications,
   onImportData,
   onSyncComplete,
   syncStatus,
@@ -124,6 +126,16 @@ export default function Sidebar({
               title="Reading Statistics"
             >
               <TrendingUp className="w-4 h-4" />
+            </button>
+          )}
+          {onOpenNotifications && (
+            <button
+              onClick={onOpenNotifications}
+              aria-label="Notification settings"
+              className="p-1 px-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 transition"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
             </button>
           )}
           <button

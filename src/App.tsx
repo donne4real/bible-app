@@ -49,6 +49,7 @@ const BookPicker = lazy(() => import('./components/BookPicker'));
 const DailyVerse = lazy(() => import('./components/DailyVerse'));
 const ReadingPlanPanel = lazy(() => import('./components/ReadingPlanPanel'));
 const ReadingStatsPanel = lazy(() => import('./components/ReadingStatsPanel'));
+const VerseImageModal = lazy(() => import('./components/VerseImageModal'));
 
 interface ErrorStateProps {
   isNtOnlyError: boolean;
@@ -195,6 +196,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [showVerseImage, setShowVerseImage] = useState(false);
   const [showLanguagesList, setShowLanguagesList] = useState(false);
 
   // ── Reading plans ─────────────────────────────────────────────────────
@@ -994,6 +996,7 @@ export default function App() {
           onApplyHighlight={(color, style) => handleApplyHighlight(selectedVerses, settings.translation, color, style)}
           onRemoveHighlight={() => handleRemoveHighlight(selectedVerses, settings.translation)}
           onOpenShareCard={() => setShowShareCard(true)}
+          onCreateVerseImage={() => setShowVerseImage(true)}
           onSaveNote={(text) => handleSaveNote(selectedVerses, text)}
           onCompare={handleCompareSelectedVersesAndClear}
           onNavigateToVerse={(bookId, chapter, verse) => {
@@ -1036,6 +1039,11 @@ export default function App() {
         {/* Share card modal (lazy-loaded) */}
         <Suspense fallback={null}>
           <ShareCardModal isOpen={showShareCard} onClose={() => setShowShareCard(false)} selectedVerses={selectedVerses} translation={settings.translation} />
+        </Suspense>
+
+        {/* Verse image modal (lazy-loaded) */}
+        <Suspense fallback={null}>
+          <VerseImageModal isOpen={showVerseImage} onClose={() => setShowVerseImage(false)} selectedVerses={selectedVerses} translation={settings.translation} />
         </Suspense>
 
         {/* Reading stats panel (lazy-loaded) */}

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns, Link, MessageCircle } from 'lucide-react';
+import { Palette, FileText, Share2, Copy, Trash2, X, Check, Bookmark, BookmarkCheck, Columns, Link, MessageCircle, Image } from 'lucide-react';
 import { Verse, Highlight, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -14,6 +14,7 @@ interface HighlightToolbarProps {
   onApplyHighlight: (color: string, style?: HighlightStyle) => void;
   onRemoveHighlight: () => void;
   onOpenShareCard: () => void;
+  onCreateVerseImage: () => void;
   onSaveNote: (text: string) => void;
   onCompare: () => void;
   onNavigateToVerse?: (bookId: string, chapter: number, verse: number) => void;
@@ -60,6 +61,7 @@ export default function HighlightToolbar({
   onApplyHighlight,
   onRemoveHighlight,
   onOpenShareCard,
+  onCreateVerseImage,
   onSaveNote,
   onCompare,
   onNavigateToVerse,
@@ -221,6 +223,17 @@ export default function HighlightToolbar({
                 >
                   <Share2 className="w-4 h-4" />
                   <span className="text-[10px] uppercase font-bold tracking-wider hidden sm:inline">Design</span>
+                </button>
+
+                {/* Verse Image */}
+                <button
+                  onClick={onCreateVerseImage}
+                  className="p-2 bg-zinc-800/80 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded-lg transition active:scale-95 flex items-center justify-center gap-1"
+                  aria-label="Create verse image"
+                  title="Create shareable verse image"
+                >
+                  <Image className="w-4 h-4" />
+                  <span className="text-[10px] uppercase font-bold tracking-wider hidden sm:inline">Image</span>
                 </button>
 
                 {/* Chapter Bookmark */}

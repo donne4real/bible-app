@@ -33,6 +33,12 @@ export function useAutoSync(
   const prevDataRef = useRef<string>('');
   const pullIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInitialMount = useRef(true);
+  const dataRef = useRef({ highlights, notes, bookmarks });
+
+  // Keep ref in sync with current data
+  useEffect(() => {
+    dataRef.current = { highlights, notes, bookmarks };
+  }, [highlights, notes, bookmarks]);
 
   // Track rawLastSynced from useSync
   useEffect(() => {
@@ -72,18 +78,20 @@ export function useAutoSync(
 
     pushTimerRef.current = setTimeout(async () => {
       setStatus('syncing');
-      const success = await pushToCloud({ highlights, notes, bookmarks });
+      const { highlights: h, notes: n, bookmarks: b } = dataRef.current;
+      const success = await pushToCloud({ highlights: h, notes: n, bookmarks: b });
       if (success) {
         setStatus('idle');
         setLastSynced(Date.now());
       } else {
         setStatus('error');
         // Retry once after 10 seconds
-        setTimeout(() => {
+        setTimeout(async () => {
           setStatus('pending');
           pushTimerRef.current = setTimeout(async () => {
             setStatus('syncing');
-            const retrySuccess = await pushToCloud({ highlights, notes, bookmarks });
+            const { highlights: h2, notes: n2, bookmarks: b2 } = dataRef.current;
+            const retrySuccess = await pushToCloud({ highlights: h2, notes: n2, bookmarks: b2 });
             setStatus(retrySuccess ? 'idle' : 'error');
             if (retrySuccess) setLastSynced(Date.now());
           }, AUTO_PUSH_DELAY);
@@ -132,11 +140,12 @@ export function useAutoSync(
   const pushNow = useCallback(async () => {
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     setStatus('syncing');
-    const success = await pushToCloud({ highlights, notes, bookmarks });
+    const { highlights: h, notes: n, bookmarks: b } = dataRef.current;
+    const success = await pushToCloud({ highlights: h, notes: n, bookmarks: b });
     setStatus(success ? 'idle' : 'error');
     if (success) setLastSynced(Date.now());
     return success;
-  }, [highlights, notes, bookmarks, pushToCloud]);
+  }, [pushToCloud]);
 
   const pullNow = useCallback(async () => {
     setStatus('syncing');

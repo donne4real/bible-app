@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bible-in-african-languages-v12';
+const CACHE_NAME = 'bible-in-african-languages-v13';
 
 // App shell — cached on install
 const SHELL_ASSETS = [
@@ -55,9 +55,14 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Network-first for HTML navigations, cache-first for everything else
+// Network-first for HTML navigations, cache-first for static assets & Bible JSON
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Never intercept API calls (sync endpoints or remote Bible proxy) in Service Worker
+  if (url.pathname.startsWith('/api/')) return;
 
   // HTML pages: network-first (always get latest index.html with new asset hashes)
   if (event.request.mode === 'navigate') {
@@ -81,9 +86,8 @@ self.addEventListener('fetch', event => {
       return fetch(event.request).then(response => {
         if (!response || response.status !== 200 || response.type !== 'basic') return response;
 
-        // Cache JS/CSS/font chunks dynamically as they're loaded
-        const url = new URL(event.request.url);
-        if (url.pathname.match(/\.(js|css|woff2?|ttf|svg|png|ico|webp)$/)) {
+        // Cache JS/CSS/font chunks and bundled Bible JSON files dynamically as they're loaded
+        if (url.pathname.match(/\.(js|css|json|woff2?|ttf|svg|png|ico|webp)$/)) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }

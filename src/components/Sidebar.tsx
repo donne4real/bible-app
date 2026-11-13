@@ -31,7 +31,7 @@ interface SidebarProps {
   syncStatus?: SyncStatus;
   autoLastSynced?: number | null;
   onPushNow?: () => Promise<boolean>;
-  onPullNow?: () => Promise<void>;
+  onPullNow?: () => Promise<{ highlights: Highlight[]; notes: Note[]; bookmarks: BookMarkType[] } | null>;
 }
 
 export default function Sidebar({

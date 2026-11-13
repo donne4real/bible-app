@@ -37,6 +37,7 @@ import { usePersistedJSONState } from './hooks/usePersistedState';
 import { useBibleNavigation } from './hooks/useBibleNavigation';
 import { useStudyData } from './hooks/useStudyData';
 import { useAutoSync } from './hooks/useAutoSync';
+import { useSync } from './hooks/useSync';
 import { useSearch } from './hooks/useSearch';
 import { useReadingStats } from './hooks/useReadingStats';
 import { useSettings } from './hooks/useSettings';
@@ -141,7 +142,8 @@ export default function App() {
     handleReaderTouchEnd,
   } = useBibleNavigation();
 
-  // ── Study data ────────────────────────────────────────────────────────
+  // ── Cloud delete helper & Study data ──────────────────────────────────
+  const { deleteFromCloud } = useSync();
   const {
     highlights,
     notes,
@@ -155,7 +157,9 @@ export default function App() {
     handleToggleBookmark,
     handleDeleteBookmarkById,
     handleImportData,
-  } = useStudyData();
+  } = useStudyData((type, id) => {
+    void deleteFromCloud(type, id);
+  });
 
   // ── Auto-sync ─────────────────────────────────────────────────────────
   const { status: syncStatus, lastSynced: autoLastSynced, pushNow, pullNow } = useAutoSync(highlights, notes, bookmarks, handleImportData);
@@ -244,13 +248,17 @@ export default function App() {
         }
       },
       () => {
-        // Streak reminder notification
-        showStreakReminderNotification(streak.current);
+        // Streak reminder notification (only if active streak and not yet read today)
+        const todayStr = new Date().toISOString().split('T')[0];
+        const readToday = readingStats.sessions.some(s => s.date === todayStr);
+        if (streak.current > 0 && !readToday) {
+          showStreakReminderNotification(streak.current);
+        }
       }
     );
 
     return () => stopNotificationScheduler();
-  }, [streak.current]);
+  }, [streak.current, readingStats.sessions]);
 
   // ── Selection ─────────────────────────────────────────────────────────
   const [selectedVerses, setSelectedVerses] = useState<Verse[]>([]);
@@ -925,7 +933,7 @@ export default function App() {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
                           const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
-                          const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
+                          const hlClass = hlObj ? getHighlightClass(hlObj.color, hlObj.style) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
                           return (
                             <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`grid grid-cols-1 ${gridColsClass} gap-4 py-3 px-3.5 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>
@@ -960,7 +968,7 @@ export default function App() {
                           const isSelected = selectedVerses.some(v => v.verse === verse.verse);
                           const hlId = `${verse.book_id}_${verse.chapter}_${verse.verse}`;
                           const hlObj = highlights.find(h => h.id === hlId);
-                          const hlClass = hlObj ? getHighlightClass(hlObj.color) : '';
+                          const hlClass = hlObj ? getHighlightClass(hlObj.color, hlObj.style) : '';
                           const hasNote = notes.some(n => n.id === `${verse.book_id}_${verse.chapter}_${verse.verse}`);
                           return (
                             <div key={verse.verse} id={`verse-line-${verse.verse}`} onClick={() => handleToggleVerseSelection(verse)} className={`py-3.5 px-4 border-b border-dashed border-current/10 rounded-2xl transition cursor-pointer hover:bg-amber-500/5 space-y-2.5 ${isSelected ? 'ring-2 ring-amber-500/40 bg-amber-500/5' : ''} ${hlClass}`}>

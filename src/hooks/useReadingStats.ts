@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BIBLE_BOOKS } from '../bibleStructure';
 
 export interface ReadingSession {
@@ -40,7 +40,7 @@ function saveStats(stats: ReadingStats) {
 
 export function useReadingStats() {
   const [stats, setStats] = useState<ReadingStats>(loadStats);
-  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const sessionStartRef = useRef<number>(Date.now());
 
   // Save stats whenever they change
   useEffect(() => {
@@ -49,11 +49,11 @@ export function useReadingStats() {
 
   // Track session time
   useEffect(() => {
-    setSessionStartTime(Date.now());
-    
+    sessionStartRef.current = Date.now();
+
     const handleVisibilityChange = () => {
-      if (document.hidden && sessionStartTime) {
-        const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+      if (document.hidden && sessionStartRef.current) {
+        const timeSpent = Math.floor((Date.now() - sessionStartRef.current) / 1000);
         if (timeSpent > 0 && timeSpent < 3600) { // Max 1 hour per session
           setStats(prev => ({
             ...prev,
@@ -61,13 +61,13 @@ export function useReadingStats() {
           }));
         }
       } else if (!document.hidden) {
-        setSessionStartTime(Date.now());
+        sessionStartRef.current = Date.now();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [sessionStartTime]);
+  }, []);
 
   const recordChapterRead = useCallback((bookId: string, chapter: number) => {
     const today = new Date().toISOString().split('T')[0];

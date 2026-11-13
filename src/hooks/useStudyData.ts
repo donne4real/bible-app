@@ -19,20 +19,19 @@ function migrateHighlightKeys(old: Highlight[]): Highlight[] {
   return changed ? result : old;
 }
 
+export type StudyItemType = 'highlight' | 'note' | 'bookmark';
+
 /**
  * Manages all user study data — highlights, notes, and bookmarks —
  * with automatic localStorage persistence.
  *
- * Highlights are keyed by `{translation}_{bookId}_{chapter}_{verse}`.
- * Notes and bookmarks use `{bookId}_{chapter}_{verse}` and
- * `bookmark_{bookId}_{chapter}` respectively.
+ * Highlights and notes are keyed by `{bookId}_{chapter}_{verse}`.
+ * Bookmarks use `bookmark_{bookId}_{chapter}`.
  *
+ * @param onDeleteRemote - Optional callback invoked when an item is deleted locally so it can be removed from cloud sync
  * @returns Study data arrays and CRUD handler functions
- *
- * @example
- * const { highlights, notes, handleApplyHighlight, handleToggleBookmark } = useStudyData();
  */
-export function useStudyData() {
+export function useStudyData(onDeleteRemote?: (type: StudyItemType, id: string) => void) {
   const [highlights, setHighlights] = usePersistedJSONState<Highlight[]>(
     STORAGE_KEYS.HIGHLIGHTS,
     []
@@ -79,22 +78,25 @@ export function useStudyData() {
     selectedVerses.forEach(v => {
       const id = `${v.book_id}_${v.chapter}_${v.verse}`;
       updated = updated.filter(h => h.id !== id);
+      onDeleteRemote?.('highlight', id);
     });
     setHighlights(updated);
-  }, [highlights, setHighlights]);
+  }, [highlights, setHighlights, onDeleteRemote]);
 
   const handleDeleteHighlightById = useCallback((id: string) => {
     setHighlights(prev => prev.filter(h => h.id !== id));
-  }, [setHighlights]);
+    onDeleteRemote?.('highlight', id);
+  }, [setHighlights, onDeleteRemote]);
 
   // ── Notes ───────────────────────────────────────────────────────────
   const handleSaveNote = useCallback((selectedVerses: Verse[], text: string) => {
     if (selectedVerses.length === 0) return;
     const v = [...selectedVerses].sort((a, b) => a.verse - b.verse)[0];
     const id = `${v.book_id}_${v.chapter}_${v.verse}`;
+    const trimmed = text.trim();
     setNotes(prev => {
       const updated = prev.filter(n => n.id !== id);
-      if (text.trim()) {
+      if (trimmed) {
         updated.push({
           id,
           book_id: v.book_id,
@@ -107,11 +109,15 @@ export function useStudyData() {
       }
       return updated;
     });
-  }, [setNotes]);
+    if (!trimmed) {
+      onDeleteRemote?.('note', id);
+    }
+  }, [setNotes, onDeleteRemote]);
 
   const handleDeleteNoteById = useCallback((id: string) => {
     setNotes(prev => prev.filter(n => n.id !== id));
-  }, [setNotes]);
+    onDeleteRemote?.('note', id);
+  }, [setNotes, onDeleteRemote]);
 
   // ── Bookmarks ───────────────────────────────────────────────────────
   const isCurrentChapterBookmarked = useCallback((bookId: string, chapter: number) => {
@@ -120,16 +126,21 @@ export function useStudyData() {
 
   const handleToggleBookmark = useCallback((bookId: string, bookName: string, chapter: number) => {
     const id = `bookmark_${bookId}_${chapter}`;
+    const exists = bookmarks.some(bm => bm.id === id);
     setBookmarks(prev => {
       return prev.some(bm => bm.id === id)
         ? prev.filter(bm => bm.id !== id)
         : [...prev, { id, book_id: bookId, book_name: bookName, chapter, createdAt: Date.now() }];
     });
-  }, [setBookmarks]);
+    if (exists) {
+      onDeleteRemote?.('bookmark', id);
+    }
+  }, [bookmarks, setBookmarks, onDeleteRemote]);
 
   const handleDeleteBookmarkById = useCallback((id: string) => {
     setBookmarks(prev => prev.filter(b => b.id !== id));
-  }, [setBookmarks]);
+    onDeleteRemote?.('bookmark', id);
+  }, [setBookmarks, onDeleteRemote]);
 
   // ── Import ──────────────────────────────────────────────────────────
   const handleImportData = useCallback((imported: { highlights: Highlight[]; notes: Note[]; bookmarks: Bookmark[] }) => {

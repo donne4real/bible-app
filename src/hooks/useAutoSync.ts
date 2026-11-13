@@ -23,6 +23,7 @@ interface UseAutoSyncReturn {
   lastSynced: number | null;
   pushNow: () => Promise<boolean>;
   pullNow: () => Promise<SyncData | null>;
+  deleteRemoteItem: (type: 'highlight' | 'note' | 'bookmark', id: string) => Promise<boolean>;
 }
 
 export function useAutoSync(
@@ -31,7 +32,7 @@ export function useAutoSync(
   bookmarks: Bookmark[],
   onDataPulled?: (data: SyncData) => void,
 ): UseAutoSyncReturn {
-  const { isLoggedIn, isSyncing, lastSynced: rawLastSynced, pushToCloud, pullFromCloud } = useSync();
+  const { isLoggedIn, isSyncing, lastSynced: rawLastSynced, pushToCloud, pullFromCloud, deleteFromCloud } = useSync();
 
   const [status, setStatus] = useState<SyncStatus>('idle');
   const [lastSynced, setLastSynced] = useState<number | null>(null);
@@ -59,10 +60,10 @@ export function useAutoSync(
       h: highlights.length,
       n: notes.length,
       b: bookmarks.length,
-      // Include timestamps/IDs for change detection
-      hIds: highlights.map(h => h.id + h.createdAt).sort().join(','),
-      nIds: notes.map(n => n.id + n.createdAt).sort().join(','),
-      bIds: bookmarks.map(b => b.id + b.createdAt).sort().join(','),
+      // Include timestamps/IDs/colors/styles/text for change detection
+      hIds: highlights.map(h => `${h.id}:${h.color}:${h.style || 'background'}:${h.createdAt}`).sort().join(','),
+      nIds: notes.map(n => `${n.id}:${n.text}:${n.createdAt}`).sort().join(','),
+      bIds: bookmarks.map(b => `${b.id}:${b.createdAt}`).sort().join(','),
     });
   }, [highlights, notes, bookmarks]);
 
@@ -202,6 +203,11 @@ export function useAutoSync(
     }
   }, [pullFromCloud, onDataPulled]);
 
+  const deleteRemoteItem = useCallback(async (type: 'highlight' | 'note' | 'bookmark', id: string) => {
+    if (!isLoggedIn) return false;
+    return deleteFromCloud(type, id);
+  }, [isLoggedIn, deleteFromCloud]);
+
   // Update status when useSync reports syncing
   useEffect(() => {
     if (isSyncing && status !== 'syncing') {
@@ -209,5 +215,5 @@ export function useAutoSync(
     }
   }, [isSyncing, status]);
 
-  return { status, lastSynced, pushNow, pullNow };
+  return { status, lastSynced, pushNow, pullNow, deleteRemoteItem };
 }

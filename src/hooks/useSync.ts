@@ -9,6 +9,7 @@ import { Highlight, Note, Bookmark } from '../types';
 const SYNC_API = '/api/sync';
 const TOKEN_KEY = 'bible_sync_token';
 const USER_KEY = 'bible_sync_user';
+const SYNC_AUTH_EVENT = 'bible-sync-auth-change';
 
 interface SyncUser {
   userId: string;
@@ -34,23 +35,44 @@ interface UseSyncReturn {
   deleteFromCloud: (type: 'highlight' | 'note' | 'bookmark', id: string) => Promise<boolean>;
 }
 
+function readStoredUser(): SyncUser | null {
+  const storedUser = localStorage.getItem(USER_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (storedUser && token) {
+    try {
+      return JSON.parse(storedUser);
+    } catch {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }
+  return null;
+}
+
+function notifyAuthChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SYNC_AUTH_EVENT));
+  }
+}
+
 export function useSync(): UseSyncReturn {
-  const [user, setUser] = useState<SyncUser | null>(null);
+  const [user, setUser] = useState<SyncUser | null>(() => readStoredUser());
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
 
-  // Load user from localStorage on mount
+  // Keep all mounted useSync() instances in sync when auth state changes
   useEffect(() => {
-    const storedUser = localStorage.getItem(USER_KEY);
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (storedUser && token) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem(USER_KEY);
-        localStorage.removeItem(TOKEN_KEY);
-      }
-    }
+    const syncUserFromStorage = () => {
+      const nextUser = readStoredUser();
+      setUser(nextUser);
+      if (!nextUser) setLastSynced(null);
+    };
+    window.addEventListener(SYNC_AUTH_EVENT, syncUserFromStorage);
+    window.addEventListener('storage', syncUserFromStorage);
+    return () => {
+      window.removeEventListener(SYNC_AUTH_EVENT, syncUserFromStorage);
+      window.removeEventListener('storage', syncUserFromStorage);
+    };
   }, []);
 
   const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
@@ -63,7 +85,7 @@ export function useSync(): UseSyncReturn {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         return { success: false, error: data.error || 'Login failed' };
       }
@@ -71,9 +93,10 @@ export function useSync(): UseSyncReturn {
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(USER_KEY, JSON.stringify({ userId: data.userId, email: data.email }));
       setUser({ userId: data.userId, email: data.email });
-      
+      notifyAuthChange();
+
       return { success: true };
-    } catch (err) {
+    } catch {
       return { success: false, error: 'Network error' };
     }
   }, []);
@@ -86,7 +109,7 @@ export function useSync(): UseSyncReturn {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         return { success: false, error: data.error || 'Registration failed' };
       }
@@ -94,9 +117,10 @@ export function useSync(): UseSyncReturn {
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(USER_KEY, JSON.stringify({ userId: data.userId, email: data.email }));
       setUser({ userId: data.userId, email: data.email });
-      
+      notifyAuthChange();
+
       return { success: true };
-    } catch (err) {
+    } catch {
       return { success: false, error: 'Network error' };
     }
   }, []);
@@ -106,6 +130,7 @@ export function useSync(): UseSyncReturn {
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setLastSynced(null);
+    notifyAuthChange();
   }, []);
 
   const pushToCloud = useCallback(async (data: SyncData) => {
@@ -127,14 +152,14 @@ export function useSync(): UseSyncReturn {
         setLastSynced(Date.now());
         return true;
       }
-      
+
       // If token expired, log out
       if (res.status === 401) {
         logout();
       }
-      
+
       return false;
-    } catch (err) {
+    } catch {
       return false;
     } finally {
       setIsSyncing(false);
@@ -158,9 +183,18 @@ export function useSync(): UseSyncReturn {
         const data = await res.json();
         setLastSynced(Date.now());
         return {
-          highlights: data.highlights || [],
-          notes: data.notes || [],
-          bookmarks: data.bookmarks || [],
+          highlights: (data.highlights || []).map((h: any) => ({
+            ...h,
+            createdAt: h.createdAt ?? h.created_at ?? Date.now(),
+          })),
+          notes: (data.notes || []).map((n: any) => ({
+            ...n,
+            createdAt: n.createdAt ?? n.created_at ?? Date.now(),
+          })),
+          bookmarks: (data.bookmarks || []).map((b: any) => ({
+            ...b,
+            createdAt: b.createdAt ?? b.created_at ?? Date.now(),
+          })),
         };
       }
 
@@ -169,7 +203,7 @@ export function useSync(): UseSyncReturn {
       }
 
       return null;
-    } catch (err) {
+    } catch {
       return null;
     } finally {
       setIsSyncing(false);
@@ -190,11 +224,15 @@ export function useSync(): UseSyncReturn {
         body: JSON.stringify({ type, id }),
       });
 
+      if (res.status === 401) {
+        logout();
+      }
+
       return res.ok;
-    } catch (err) {
+    } catch {
       return false;
     }
-  }, []);
+  }, [logout]);
 
   return {
     user,

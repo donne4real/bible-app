@@ -12,6 +12,7 @@ export interface NotificationSettings {
   streakReminderEnabled: boolean;
   streakReminderTime: string; // HH:MM format
   lastNotificationDate?: string;
+  lastStreakReminderDate?: string;
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -119,9 +120,10 @@ export function startNotificationScheduler(
       saveNotificationSettings({ ...settings, lastNotificationDate: today });
     }
 
-    // Streak reminder notification
-    if (settings.streakReminderEnabled && currentTime === settings.streakReminderTime) {
+    // Streak reminder notification (once per day)
+    if (settings.streakReminderEnabled && currentTime === settings.streakReminderTime && settings.lastStreakReminderDate !== today) {
       onStreakReminder();
+      saveNotificationSettings({ ...loadNotificationSettings(), lastStreakReminderDate: today });
     }
   }, 60000); // Check every minute
 }

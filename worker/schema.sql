@@ -1,6 +1,6 @@
 -- Bible App Sync Schema for Cloudflare D1
 
--- Users table (simple email/password auth)
+-- Users table (email/password auth with PBKDF2 password hashes)
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_login INTEGER
 );
 
--- Highlights table
+-- Highlights table (id is namespaced as {user_id}:{verse_id})
 CREATE TABLE IF NOT EXISTS highlights (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS highlights (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Notes table
+-- Notes table (id is namespaced as {user_id}:{verse_id})
 CREATE TABLE IF NOT EXISTS notes (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS notes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Bookmarks table
+-- Bookmarks table (id is namespaced as {user_id}:{bookmark_id})
 CREATE TABLE IF NOT EXISTS bookmarks (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,

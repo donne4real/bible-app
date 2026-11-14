@@ -41,12 +41,13 @@ A fast, offline-first Bible reader with 22 translations in African and world lan
 - **Verse-level comparison** — select specific verses to compare
 - **WhatsApp sharing** — one-tap share to WhatsApp
 - **Native share** — Web Share API on mobile, clipboard on desktop
-- **Verse card generator** — styled graphics for social media
+- **Verse card & image generators** — styled graphics for social media
 
 ### Engagement
 - **Daily Verse** — featured verse that changes daily
-- **Reading streaks** — track consecutive days reading
+- **Reading streaks & stats** — track consecutive days reading, reading time, and per-book progress
 - **Reading plan progress** — streak counter, day tracking
+- **Browser notifications** — optional daily verse and streak reminder notifications
 
 ## Tech Stack
 
@@ -60,7 +61,7 @@ A fast, offline-first Bible reader with 22 translations in African and world lan
 | Testing | Jest + Testing Library |
 | Deployment | Cloudflare Workers |
 | Database | Cloudflare D1 (sync) |
-| Auth | JWT (30-day tokens) |
+| Auth | JWT (30-day tokens) + PBKDF2-SHA256 |
 | Android | Capacitor |
 
 ## Run Locally
@@ -111,22 +112,29 @@ src/
 ├── types.ts                     # TypeScript interfaces
 ├── index.css                    # Global styles + Tailwind @theme config
 ├── hooks/
+│   ├── useAutoSync.ts           # Debounced auto-push + visibility/periodic auto-pull
 │   ├── useBibleNavigation.ts    # Book/chapter/verse nav + swipe/keyboard
-│   ├── useStudyData.ts          # Highlights, notes, bookmarks + import
+│   ├── useStudyData.ts          # Highlights, notes, bookmarks + cloud delete hook
 │   ├── useSearch.ts             # Search + autocomplete + reference parsing
+│   ├── useReadingStats.ts       # Reading sessions, streaks, book progress, time spent
 │   ├── useReadingStreak.ts      # Reading streak tracking
 │   ├── usePersistedState.ts     # localStorage-backed state hooks
 │   ├── useSettings.ts           # Reader settings + theme helpers
 │   ├── useComparison.ts         # Translation comparison state
-│   └── useSync.ts               # Cloud sync (login, push, pull)
+│   └── useSync.ts               # Cloud sync API client (login, push, pull, delete)
+├── utils/
+│   └── notifications.ts         # Daily verse & streak reminder notification scheduler
 ├── components/
 │   ├── BookPicker.tsx            # Book → chapter → verse picker modal
 │   ├── VerseLine.tsx             # Single verse renderer
 │   ├── HighlightToolbar.tsx      # Verse action toolbar (highlight, share, compare, cross-refs)
 │   ├── ReadingPlanPanel.tsx      # Reading plan selection + progress
+│   ├── ReadingStatsPanel.tsx     # Reading analytics & book completion modal
+│   ├── NotificationSettingsPanel.tsx # Daily verse & streak notification settings
 │   ├── DailyVerse.tsx            # Verse of the Day banner
 │   ├── Sidebar.tsx               # Study hub (notes, highlights, plans, streaks, export/import, sync)
 │   ├── ShareCardModal.tsx        # Verse card generator
+│   ├── VerseImageModal.tsx       # Downloadable verse image generator
 │   ├── ThemeSelector.tsx         # Display settings panel (fonts, themes, spacing)
 │   ├── LanguagesGuideModal.tsx   # Translation info
 │   ├── SyncPanel.tsx             # Cloud sync login/register/push/pull UI
@@ -172,16 +180,16 @@ Highlights use `{bookId}_{chapter}_{verse}` (translation-agnostic). Old `{transl
 The app supports optional cross-device sync via Cloudflare D1.
 
 ### How It Works
-1. User creates account (email/password) in Sidebar → Sync Panel
-2. Click "Push" to upload highlights, notes, bookmarks to cloud
-3. On another device, login and click "Pull" to download data
-4. Data merges with local storage (no data loss)
+1. User creates an account (email/password) in Sidebar → Sync Panel
+2. **Auto-sync** automatically pushes changes 3 seconds after edits and pulls on tab focus (or every 5 minutes)
+3. Manual **Push** and **Pull** buttons are also available in the Sync Panel
+4. Deleting a highlight, note, or bookmark locally automatically removes it from the cloud
 
 ### Architecture
-- **Database:** Cloudflare D1 (SQLite at the edge)
-- **Auth:** JWT tokens (30-day expiry)
+- **Database:** Cloudflare D1 (SQLite at the edge, batched writes via `DB.batch()`, per-user scoped IDs `{userId}:{itemId}`)
+- **Auth:** PBKDF2-SHA256 (100k iterations, per-user salt) + HMAC-SHA256 JWT tokens (30-day expiry)
 - **API:** `/api/sync/*` endpoints (register, login, push, pull, delete)
-- **Storage:** Still works offline with localStorage; sync is optional
+- **Storage:** Still works 100% offline with localStorage; sync is optional
 
 ### Setup
 1. Create D1 database: `npx wrangler d1 create bible-app-db`
@@ -209,8 +217,9 @@ This builds the app and deploys to Cloudflare Workers with static asset serving 
 ### Service Worker
 - **HTML**: Network-first (always fetches latest `index.html`)
 - **JS/CSS/Fonts**: Cache-first with dynamic caching
-- **Bible JSON**: Pre-cached on install
-- Cache version in `public/sw.js` — bump to force client updates
+- **Bible JSON**: Default translation (`web.json`, ~5MB) pre-cached on install; other 18 bundled translations cached on-demand when selected
+- **API routes (`/api/*`)**: Bypassed by the Service Worker
+- Cache version in `public/sw.js` (`v13`) — bump to force client updates
 
 ## Testing
 

@@ -6,13 +6,13 @@
 
 ---
 
-## 📍 Right now (updated Sep 18, 2026)
+## 📍 Right now (updated Nov 13, 2026)
 
-- **What it is:** A Bible reading app — web and Android — that works in African languages (plus English, Arabic, French, and Haitian Creole), and works fully offline once installed.
-- **Version:** 2.0.0, live on the web (Cloudflare) and packaged for the Google Play Store.
-- **Translations available:** 19 bundled directly into the app (so they work with zero internet), plus 3 more (NLT, Amplified, NIV) that stream in live from a licensed Bible-text service, because those are copyrighted and can't legally be bundled for free.
-- **Last major change:** added those 3 copyrighted translations (Sep 4, 2026) — the first time the app talks to a paid, licensed data source instead of only free public-domain text.
-- **Overall shape:** it's a "static app" — meaning almost everything (the Bible text itself) is just files sitting in the app, not fetched from a server on every read. That's *why* it works offline and loads fast.
+- **What it is:** A Bible reading app — web, Android, and iOS-ready — that works in African languages (plus English, Arabic, French, and Haitian Creole), and works offline once installed.
+- **Version:** 2.4.1, live on the web (Cloudflare Workers + D1) and packaged for mobile via Capacitor.
+- **Translations available:** 19 bundled directly into the app (WEB is pre-cached immediately; the other 18 cache automatically the first time you pick them), plus 3 more (NLT, Amplified, NIV) that stream in live from a licensed Bible-text service.
+- **Last major change:** added optional cross-device Cloud Sync (Cloudflare D1), automatic background sync, reading statistics, and browser notifications (Nov 2026), followed by a full security & sync hardening pass on Nov 13, 2026.
+- **Overall shape:** still offline-first with no required account — everything works locally on your device by default, with optional cloud backup if you want your highlights, notes, and bookmarks synced across phones and laptops.
 
 ---
 
@@ -61,6 +61,17 @@ Most Bible apps either (a) only support a handful of major world languages, or (
 - **Built it to work identically on both hosting providers** — the proxy logic itself lives in one shared file, with a thin adapter for Cloudflare and a separate thin adapter for Netlify, so the app behaves the same no matter which one is actually serving it at the time.
 - Also fixed a couple of small infrastructure snags: the app had stopped updating for existing users because the "please refresh, there's a new version" cache-versioning number hadn't been bumped, and the hosting provider's build system needed a newer Node.js version than the app was pinned to.
 
+### September 25 – November 9, 2026 — Study tools, reading plans, and Cloud Sync (v2.1 – v2.4)
+- Broke the single giant code file into clean, focused building blocks (hooks and lazy-loaded components) and added a 45-test automated test suite.
+- Added reading plans (NT in 30 Days, Psalms, Proverbs, and a 365-day Chronological plan), side-by-side and interlinear translation comparison (up to 4 translations at once), cross-references, daily verses, reading streaks, WhatsApp sharing, and downloadable verse images.
+- Added optional **Cloud Sync** backed by Cloudflare D1 (a database running on Cloudflare's edge network) with automatic background pushing and pulling, plus a reading statistics dashboard and daily notification reminders.
+- Reduced initial install size from ~90 MB to ~5 MB by pre-caching only the default English translation upfront and caching other languages on demand.
+
+### November 13, 2026 — Code review, sync isolation, and offline cache fixes (v2.4.1)
+- Audited the entire codebase and fixed a critical multi-user sync bug where two users highlighting the same verse (like `GEN_1_1`) would overwrite each other's row in the database; every synced record is now scoped to the user's unique ID.
+- Upgraded password security to 100,000-round PBKDF2 hashing (automatically upgrading older accounts on login) and batched cloud database writes so syncing hundreds of highlights happens in a single step.
+- Wired up cloud deletions (so deleting a highlight or note locally also deletes it in the cloud instead of reappearing on next sync) and fixed the Service Worker so non-default Bible translations actually save to offline cache when opened.
+
 ---
 
 ## Where things stand today
@@ -68,4 +79,4 @@ Most Bible apps either (a) only support a handful of major world languages, or (
 - **19 languages/translations** are fully bundled and work with zero internet: 11 African languages (Yoruba, Igbo, Hausa, Twi, Nigerian Pidgin, Afrikaans, Amharic, Swahili, Shona, Ndebele, Ewe), Haitian Creole, Arabic, and 6 English/French classics.
 - **3 more translations** (NLT, AMP, NIV) work only when online, since they're licensed rather than free.
 - The app ships on the **web** (Cloudflare) and as an **Android app** (Play Store-ready, signed).
-- No AI, no accounts, no API keys visible to end users — the only "server" involvement left is the small proxy for the 3 licensed translations.
+- No AI, no ads, and no forced login — accounts are 100% optional and only used if you want Cloudflare D1 cloud sync across devices.

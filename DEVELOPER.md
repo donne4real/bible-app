@@ -86,9 +86,14 @@ All state is local React state + localStorage. No Redux, no Zustand, no external
 | Hook | File | Purpose |
 |---|---|---|
 | `useBibleNavigation` | `hooks/useBibleNavigation.ts` | Book/chapter/verse selection, swipe gestures, keyboard arrows, picker state |
-| `useStudyData` | `hooks/useStudyData.ts` | Highlights, notes, bookmarks — CRUD + import/merge |
+| `useStudyData` | `hooks/useStudyData.ts` | Highlights, notes, bookmarks — CRUD + import/merge + cloud delete callback |
 | `useSearch` | `hooks/useSearch.ts` | Chapter search, whole-Bible search, autocomplete, reference parsing, fuzzy matching |
-| `useReadingStreak` | `hooks/useReadingStreak.ts` | Streak tracking (current, longest, total days) |
+| `useReadingStats` | `hooks/useReadingStats.ts` | Reading sessions, streaks, per-book completion, and session duration tracking |
+| `useReadingStreak` | `hooks/useReadingStreak.ts` | Legacy streak tracking helper |
+| `useSettings` | `hooks/useSettings.ts` | Reader settings (font, size, spacing, theme, zen mode) + theme classes |
+| `useComparison` | `hooks/useComparison.ts` | Parallel translation comparison state (side-by-side & interlinear) |
+| `useSync` | `hooks/useSync.ts` | Cloud sync client (auth, push, pull, delete) with cross-hook auth event sync |
+| `useAutoSync` | `hooks/useAutoSync.ts` | Debounced auto-push (3s) + visibility/interval auto-pull wrapper around `useSync` |
 | `usePersistedState` | `hooks/usePersistedState.ts` | Generic localStorage-backed state with serialization |
 
 ### Bible Data Loading
@@ -108,10 +113,10 @@ All state is local React state + localStorage. No Redux, no Zustand, no external
 
 ### Service Worker (`public/sw.js`)
 
-- **HTML navigations:** Network-first (always fetches latest index.html)
-- **JS/CSS/fonts:** Cache-first with dynamic caching
-- **Bible JSON:** Pre-cached on install
-- Cache version: bump `CACHE_NAME` to force client updates after deploys
+- **HTML navigations:** Network-first (always fetches latest `index.html`)
+- **JS/CSS/fonts/Bible JSON:** Cache-first with dynamic caching. Only `/bibles/web.json` (~5MB) is pre-cached on install; the other 18 bundled translations are cached on-demand when selected.
+- **API routes (`/api/*`):** Ignored by the Service Worker so sync and proxy requests go directly to the Worker.
+- Cache version: bump `CACHE_NAME` (currently `v13`) to force client updates after deploys
 
 ### Highlight Key Format
 
@@ -148,6 +153,10 @@ Highlights use `{bookId}_{chapter}_{verse}` (translation-agnostic). This means h
 | `ShareCardModal.tsx` | Verse card generator with backgrounds and styles |
 | `ThemeSelector.tsx` | Display settings: fonts, themes, spacing, zen mode |
 | `LanguagesGuideModal.tsx` | Translation info and language guide |
+| `SyncPanel.tsx` | Cloud sync login/register/push/pull status UI |
+| `ReadingStatsPanel.tsx` | Modal displaying reading streaks, time spent, and book progress |
+| `NotificationSettingsPanel.tsx` | Modal for configuring daily verse & streak reminder notifications |
+| `VerseImageModal.tsx` | Modal for generating downloadable verse images |
 | `ErrorBoundary.tsx` | React error boundary with recovery UI |
 
 ## Adding a New Translation
@@ -231,6 +240,7 @@ Set in Cloudflare dashboard → Workers → Settings → Variables:
 | Variable | Description |
 |---|---|
 | `API_BIBLE_KEY` | api.bible API key for NLT/AMP/NIV |
+| `JWT_SECRET` | Secret key for signing 30-day sync JWT tokens |
 
 ### Android
 
@@ -265,8 +275,8 @@ Bump `CACHE_NAME` version in `public/sw.js` (e.g., `v10` → `v11`).
 
 - **Bundle size:** ~505KB JS (gzipped: ~153KB). The cross-reference data and daily verses add ~15KB.
 - **Bible JSON:** Each translation is ~5MB. Total ~90MB in `public/bibles/`.
-- **First load:** Service worker pre-caches all Bible JSON (~90MB). Subsequent loads are instant.
-- **Code splitting:** Not yet implemented. The main JS bundle could be split by route.
+- **First load:** Service worker pre-caches only `web.json` (~5MB) on install; other translations are cached on-demand when opened.
+- **Code splitting:** Heavy modals and panels (`Sidebar`, `BookPicker`, `ShareCardModal`, `VerseImageModal`, `LanguagesGuideModal`, `ReadingPlanPanel`, `ReadingStatsPanel`, `NotificationSettingsPanel`, `DailyVerse`) are lazy-loaded via `React.lazy`.
 
 ## Troubleshooting
 

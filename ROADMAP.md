@@ -68,7 +68,7 @@
 |---|---|---|
 | More cross-reference data | 1-2 hrs | Expand from ~150 to 500+ verse mappings |
 | More Daily Verse content | 1-2 hrs | Expand from 52 to 365 unique verses |
-| Bundle size optimization | 1-2 hrs | Code-split the 500KB+ JS bundle via dynamic imports |
+| ✅ Bundle size optimization | Done | Code-split heavy modals/panels via `React.lazy` and reduced SW pre-cache from 90MB to 5MB |
 
 ### Small Features (1-3 hours each)
 | Feature | Lift | Description |
@@ -83,7 +83,7 @@
 | Prayer journal | 4-6 hrs | New data model (prayer text, linked verse, date, answered status). New tab in Sidebar. |
 | Daily devotionals | 2-3 days | 365 short devotionals (curate from public domain sources). New page/panel. |
 | Church/group reading plans | 6-8 hrs | Shareable link with plan ID and group code. No backend needed for basic version. |
-| Cloud sync (optional) | 2-3 days | Firebase/Supabase for optional account and data sync. Auth, conflict resolution. |
+| ✅ Cloud sync (optional) | Done | Cloudflare D1 + Worker sync (`worker/sync.ts`, `useSync`, `useAutoSync`) with PBKDF2 auth & per-user scoped keys. |
 
 ### Deferred
 | Feature | Reason | Future Path |
@@ -114,8 +114,11 @@
 ### Gap closers (status)
 - [x] Daily Verse
 - [x] Reading streaks / gamification
-- [x] Share improvements (WhatsApp, native share)
+- [x] Share improvements (WhatsApp, native share, verse image generator)
 - [x] Cross-references
+- [x] Cloud sync & auto-sync (Cloudflare D1)
+- [x] Push notifications (Daily Verse & streak reminders)
+- [x] Reading statistics dashboard
 - [ ] Verse memorization
 - [ ] Daily devotionals
 - [ ] Audio (TTS as v1)

@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bible in African Languages — What's New Update Slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,650;1,9..144,500&family=Manrope:wght@500;600;700;800&family=Noto+Serif:wght@400;600&display=swap">
+<style>
+  :root {
+    --cocoa: #24130C;
+    --cocoa-2: #3A1F13;
+    --terra: #B4472B;
+    --terra-deep: #862F1B;
+    --gold: #E3A72F;
+    --gold-soft: #F2C766;
+    --green: #2F6B45;
+    --parch: #F4EADA;
+    --parch-2: #EADFCA;
+    --ink: #2A1810;
+    --muted: #7A5A45;
+    --serif: 'Noto Serif', Georgia, serif;
+    --display: 'Fraunces', Georgia, serif;
+    --ui: 'Manrope', 'Segoe UI', Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #111; }
+  body { font-family: var(--ui); -webkit-font-smoothing: antialiased; }
+  .art { display: none; position: relative; overflow: hidden; }
+  .art.on { display: block; }
+
+  /* kente band */
+  .kente {
+    position: absolute; left: 0; right: 0; height: 34px; z-index: 10;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 58px, rgba(0,0,0,.85) 58px 62px, transparent 62px 120px),
+      repeating-linear-gradient(90deg, var(--gold) 0 30px, var(--green) 30px 44px, var(--gold) 44px 72px, var(--terra) 72px 96px, #161009 96px 104px, var(--gold) 104px 120px);
+  }
+  .kente::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 3px, transparent 3px 9px);
+  }
+  .kente.top { top: 0; } .kente.bottom { bottom: 0; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 800 23px/1 var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
+  }
+  .badge-pill {
+    display: inline-block; padding: 10px 22px; border-radius: 999px;
+    background: rgba(227,167,47,.18); border: 2px solid rgba(227,167,47,.45);
+    font: 800 21px/1 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-soft);
+  }
+  .h1 { font-family: var(--display); font-weight: 650; letter-spacing: -.015em; line-height: 1.0; }
+  .h1 em { font-style: italic; font-weight: 500; color: var(--gold-soft); }
+
+  .phone {
+    position: absolute; width: 450px; padding: 15px; border-radius: 60px;
+    background: linear-gradient(145deg, #3b2a22, #0d0806 60%);
+    box-shadow: 0 40px 80px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.1);
+  }
+  .phone img { display: block; width: 100%; border-radius: 46px; }
+
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand img { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 10px 24px rgba(0,0,0,.3); }
+  .brand .name { font: 800 32px/1.12 var(--ui); }
+  .brand .sub { font: 600 22px/1.3 var(--ui); opacity: .78; margin-top: 6px; }
+
+  /* ───────── 1 · COVER (1080x1350) ───────── */
+  #cover {
+    width: 1080px; height: 1350px; color: var(--parch);
+    background:
+      radial-gradient(900px 750px at 90% 85%, rgba(180,71,43,.58), transparent 70%),
+      radial-gradient(650px 550px at 0% 10%, rgba(227,167,47,.18), transparent 70%),
+      var(--cocoa);
+  }
+  #cover .copy { position: absolute; left: 76px; top: 102px; width: 610px; z-index: 2; }
+  #cover .h1 { font-size: 98px; margin-top: 26px; }
+  #cover .lead { margin-top: 28px; font: 600 28px/1.48 var(--ui); color: rgba(244,234,218,.88); max-width: 540px; }
+  #cover .chips { margin-top: 38px; display: flex; flex-wrap: wrap; gap: 14px; max-width: 540px; }
+  #cover .chip {
+    padding: 13px 22px; border-radius: 16px;
+    background: rgba(244,234,218,.08); border: 1.5px solid rgba(244,234,218,.18);
+    font: 700 22px/1.1 var(--ui); color: var(--parch);
+  }
+  #cover .chip b { color: var(--gold-soft); }
+  #cover .phone { right: 42px; top: 430px; width: 420px; transform: rotate(4deg); }
+  #cover .foot { position: absolute; left: 76px; bottom: 88px; }
+
+  /* ───────── 2 · 22 TRANSLATIONS (1080x1350) ───────── */
+  #langs { width: 1080px; height: 1350px; background: var(--parch); color: var(--ink); }
+  #langs .head { position: absolute; left: 76px; right: 76px; top: 96px; }
+  #langs .eyebrow { color: var(--terra); }
+  #langs .h1 { font-size: 76px; margin-top: 18px; color: var(--ink); }
+  #langs .h1 em { color: var(--terra); }
+  #langs .sub { margin-top: 14px; font: 600 26px/1.38 var(--ui); color: var(--muted); }
+  #langs .sections { position: absolute; left: 76px; right: 76px; top: 388px; display: grid; gap: 20px; }
+  #langs .box {
+    background: #FBF5EA; border: 2px solid #E5D5BB; border-radius: 28px; padding: 24px 30px;
+  }
+  #langs .box-head {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;
+  }
+  #langs .box-title { font: 800 23px/1 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--terra); }
+  #langs .box-tag {
+    padding: 7px 16px; border-radius: 999px; background: rgba(47,107,69,.14);
+    color: var(--green); font: 800 18px/1 var(--ui); text-transform: uppercase; letter-spacing: .08em;
+  }
+  #langs .box-tag.online { background: rgba(180,71,43,.14); color: var(--terra-deep); }
+  #langs .pill-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  #langs .lpill {
+    padding: 12px 20px; border-radius: 14px; background: #fff; border: 1.5px solid #E5D5BB;
+    font: 700 23px/1.1 var(--ui); color: var(--ink);
+  }
+  #langs .lpill.new {
+    background: var(--cocoa); color: var(--parch); border-color: var(--cocoa);
+  }
+  #langs .lpill.new span { color: var(--gold-soft); font-size: 17px; font-weight: 800; margin-left: 6px; text-transform: uppercase; }
+  #langs .foot {
+    position: absolute; left: 76px; right: 76px; bottom: 76px;
+    display: flex; justify-content: space-between; align-items: center;
+    font: 700 25px/1.3 var(--ui); color: var(--muted);
+  }
+  #langs .foot b { color: var(--terra); }
+
+  /* ───────── 3 · PARALLEL & STUDY TOOLS (1080x1350) ───────── */
+  #study {
+    width: 1080px; height: 1350px; color: var(--parch);
+    background: radial-gradient(850px 850px at 100% 100%, rgba(36,19,12,.6), transparent 70%), var(--terra);
+  }
+  #study .phone { left: 64px; top: 140px; width: 445px; transform: rotate(-3.5deg); }
+  #study .copy { position: absolute; left: 560px; right: 64px; top: 145px; }
+  #study .eyebrow { color: var(--gold-soft); }
+  #study .h1 { font-size: 68px; margin-top: 20px; }
+  #study .h1 em { color: var(--parch); }
+  #study .cards { margin-top: 34px; display: grid; gap: 20px; }
+  #study .scard {
+    background: rgba(36,19,12,.42); border: 1.5px solid rgba(244,234,218,.2);
+    border-radius: 24px; padding: 22px 26px;
+  }
+  #study .scard .st { font: 800 27px/1.2 var(--ui); color: var(--gold-soft); }
+  #study .scard .sd { margin-top: 8px; font: 500 22px/1.42 var(--ui); color: rgba(244,234,218,.9); }
+
+  /* ───────── 4 · PLANS, STREAKS & CLOUD SYNC (1080x1350) ───────── */
+  #features { width: 1080px; height: 1350px; background: var(--cocoa); color: var(--parch); }
+  #features .head { position: absolute; left: 76px; right: 76px; top: 96px; }
+  #features .h1 { font-size: 76px; margin-top: 20px; }
+  #features .grid {
+    position: absolute; left: 76px; right: 76px; top: 340px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  #features .fcard {
+    background: rgba(244,234,218,.06); border: 2px solid rgba(244,234,218,.13);
+    border-radius: 28px; padding: 30px; display: flex; flex-direction: column; gap: 14px;
+  }
+  #features .ficon {
+    width: 64px; height: 64px; border-radius: 18px;
+    background: rgba(227,167,47,.16); border: 1.5px solid rgba(227,167,47,.4);
+    display: flex; align-items: center; justify-content: center;
+    font: 800 32px/1 var(--ui); color: var(--gold);
+  }
+  #features .ftitle { font: 800 31px/1.2 var(--ui); color: var(--parch); }
+  #features .fdesc { font: 500 23px/1.45 var(--ui); color: rgba(244,234,218,.76); }
+  #features .foot {
+    position: absolute; left: 76px; right: 76px; bottom: 82px;
+    padding: 22px 30px; border-radius: 22px;
+    background: rgba(47,107,69,.22); border: 1.5px solid rgba(47,107,69,.5);
+    display: flex; justify-content: space-between; align-items: center;
+    font: 700 24px/1.3 var(--ui); color: var(--parch);
+  }
+  #features .foot span { color: var(--gold-soft); font-weight: 800; }
+
+  /* ───────── 5 · GET IT / CTA (1080x1350) ───────── */
+  #getit { width: 1080px; height: 1350px; background: var(--parch); color: var(--ink); }
+  #getit .head { position: absolute; left: 80px; right: 80px; top: 96px; text-align: center; }
+  #getit .eyebrow { color: var(--terra); justify-content: center; }
+  #getit .h1 { font-size: 92px; margin-top: 22px; }
+  #getit .h1 em { color: var(--terra); }
+  #getit .qrcard {
+    position: absolute; left: 50%; top: 390px; width: 450px; margin-left: -225px; padding: 36px;
+    border-radius: 38px; background: #fff; box-shadow: 0 24px 60px rgba(90,50,20,.16);
+    border: 2px solid #E5D5BB; text-align: center;
+  }
+  #getit .qrcard img { width: 374px; height: 374px; display: block; margin: 0 auto; }
+  #getit .qrcard .cap { margin-top: 20px; font: 800 25px/1.2 var(--ui); color: var(--terra-deep); }
+  #getit .links {
+    position: absolute; left: 80px; right: 80px; top: 965px; text-align: center;
+    font: 600 27px/1.5 var(--ui); color: var(--muted);
+  }
+  #getit .links b { color: var(--ink); font-weight: 800; }
+  #getit .badges {
+    position: absolute; left: 0; right: 0; bottom: 86px;
+    display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+  }
+  #getit .badge {
+    padding: 14px 26px; border-radius: 999px; background: var(--cocoa);
+    color: var(--parch); font: 800 22px/1 var(--ui);
+  }
+
+  /* ───────── STORY 1080x1920 ───────── */
+  #story {
+    width: 1080px; height: 1920px; color: var(--parch);
+    background:
+      radial-gradient(1000px 900px at 80% 70%, rgba(180,71,43,.6), transparent 70%),
+      var(--cocoa);
+  }
+  #story .copy { position: absolute; left: 84px; right: 84px; top: 150px; text-align: center; }
+  #story .h1 { font-size: 108px; margin-top: 28px; }
+  #story .sub { margin-top: 26px; font: 600 31px/1.45 var(--ui); color: rgba(244,234,218,.86); }
+  #story .list {
+    position: absolute; left: 90px; right: 90px; top: 620px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; z-index: 3;
+  }
+  #story .sp {
+    padding: 20px 24px; border-radius: 22px;
+    background: rgba(244,234,218,.09); border: 1.5px solid rgba(244,234,218,.2);
+    font: 700 25px/1.25 var(--ui); text-align: left;
+  }
+  #story .sp b { color: var(--gold-soft); display: block; font-size: 28px; margin-bottom: 4px; }
+  #story .phone { left: 50%; margin-left: -240px; width: 480px; top: 1030px; transform: rotate(-2.5deg); }
+  #story .fade {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 540px;
+    background: linear-gradient(180deg, transparent, var(--cocoa) 62%);
+  }
+  #story .foot { position: absolute; left: 84px; right: 84px; bottom: 120px; text-align: center; z-index: 4; }
+  #story .pill {
+    display: inline-flex; align-items: center; gap: 14px; padding: 22px 40px; border-radius: 999px;
+    font: 800 30px/1 var(--ui); background: var(--gold); color: var(--cocoa);
+  }
+  #story .foot .search { margin-top: 22px; font: 600 28px/1.4 var(--ui); color: rgba(244,234,218,.88); }
+
+  /* ───────── SQUARE 1080x1080 (WhatsApp / Facebook / X) ───────── */
+  #square {
+    width: 1080px; height: 1080px; color: var(--parch);
+    background:
+      radial-gradient(850px 750px at 100% 100%, rgba(180,71,43,.62), transparent 70%),
+      var(--cocoa);
+  }
+  #square .copy { position: absolute; left: 72px; top: 86px; width: 560px; z-index: 2; }
+  #square .h1 { font-size: 76px; margin-top: 20px; }
+  #square .bullets {
+    margin-top: 28px; display: grid; gap: 14px; font: 700 24px/1.3 var(--ui); color: var(--parch);
+  }
+  #square .bullets div { display: flex; align-items: center; gap: 12px; }
+  #square .bullets span { color: var(--gold); font-size: 26px; }
+  #square .scan {
+    margin-top: 32px; display: flex; gap: 20px; align-items: center;
+    font: 600 22px/1.38 var(--ui); color: rgba(244,234,218,.85);
+  }
+  #square .scan b { color: var(--parch); font-weight: 800; }
+  #square .qr { flex: none; width: 124px; height: 124px; padding: 10px; background: #fff; border-radius: 16px; }
+  #square .qr img { width: 100%; height: 100%; display: block; }
+  #square .phone { right: 48px; top: 118px; width: 345px; padding: 13px; border-radius: 50px; transform: rotate(4.5deg); }
+  #square .phone img { border-radius: 38px; }
+  #square .foot { position: absolute; left: 72px; bottom: 72px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · COVER -->
+<section class="art" id="cover">
+  <div class="kente top"></div>
+  <div class="copy">
+    <span class="badge-pill">What’s New · v2.4 Update</span>
+    <h1 class="h1">Bigger, faster, and built for <em>deeper study.</em></h1>
+    <p class="lead">From 8 translations at launch to <b>22 Bibles</b>, reading plans, 4-way parallel study, and cloud sync.</p>
+    <div class="chips">
+      <div class="chip"><b>22</b> Translations</div>
+      <div class="chip"><b>4-Way</b> Parallel View</div>
+      <div class="chip"><b>365-Day</b> Reading Plans</div>
+      <div class="chip"><b>Cloud</b> Sync &amp; Backup</div>
+      <div class="chip"><b>Cross</b> References</div>
+      <div class="chip"><b>5 MB</b> Fast Offline Install</div>
+    </div>
+  </div>
+  <div class="phone"><img src="shot-read.png" alt=""></div>
+  <div class="foot">
+    <div class="brand">
+      <img src="icon.png" alt="">
+      <div>
+        <div class="name">Bible in African Languages</div>
+        <div class="sub">Free · No ads · Web &amp; Google Play</div>
+      </div>
+    </div>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- 2 · 22 TRANSLATIONS -->
+<section class="art" id="langs">
+  <div class="kente top"></div>
+  <div class="head">
+    <div class="eyebrow">Expanded Library · 22 Translations</div>
+    <h2 class="h1">Every language you pray in, <em>plus</em> the classics.</h2>
+    <div class="sub">Started with 8 translations — now 19 offline Bibles + 3 licensed study versions.</div>
+  </div>
+  <div class="sections">
+    <div class="box">
+      <div class="box-head">
+        <div class="box-title">11 African Languages + Creole &amp; Arabic</div>
+        <div class="box-tag">100% Offline</div>
+      </div>
+      <div class="pill-grid">
+        <span class="lpill">Yorùbá</span>
+        <span class="lpill">Igbo</span>
+        <span class="lpill">Hausa</span>
+        <span class="lpill">Naija Pidgin</span>
+        <span class="lpill">Twi</span>
+        <span class="lpill">Kiswahili</span>
+        <span class="lpill">Amharic · አማርኛ</span>
+        <span class="lpill">Ewe</span>
+        <span class="lpill">Afrikaans</span>
+        <span class="lpill">Shona</span>
+        <span class="lpill">Ndebele</span>
+        <span class="lpill">Haitian Creole</span>
+        <span class="lpill new">Arabic · العربية <span>New</span></span>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-head">
+        <div class="box-title">6 Public-Domain English &amp; French Versions</div>
+        <div class="box-tag">100% Offline</div>
+      </div>
+      <div class="pill-grid">
+        <span class="lpill">King James (KJV)</span>
+        <span class="lpill">World English (WEB)</span>
+        <span class="lpill">French Louis Segond</span>
+        <span class="lpill new">ASV <span>New</span></span>
+        <span class="lpill new">Basic English (BBE) <span>New</span></span>
+        <span class="lpill new">Young’s Literal (YLT) <span>New</span></span>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-head">
+        <div class="box-title">3 Licensed Modern Translations</div>
+        <div class="box-tag online">Streamed Live</div>
+      </div>
+      <div class="pill-grid">
+        <span class="lpill new">New Living Translation (NLT) <span>New</span></span>
+        <span class="lpill new">New International Version (NIV) <span>New</span></span>
+        <span class="lpill new">Amplified Bible (AMP) <span>New</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Bible in African Languages</span><b>Swipe for new study tools →</b></div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- 3 · PARALLEL & STUDY TOOLS -->
+<section class="art" id="study">
+  <div class="kente top"></div>
+  <div class="phone"><img src="shot-compare.png" alt=""></div>
+  <div class="copy">
+    <div class="eyebrow">Side-by-Side &amp; Interlinear</div>
+    <h2 class="h1">Compare up to <em>4 Bibles</em> at once.</h2>
+    <div class="cards">
+      <div class="scard">
+        <div class="st">4-Translation Parallel View</div>
+        <div class="sd">Read Yorùbá, Igbo, KJV, and NLT side by side or stacked verse by verse.</div>
+      </div>
+      <div class="scard">
+        <div class="st">Cross-References Built In</div>
+        <div class="sd">Tap any key verse to explore connected passages across Old &amp; New Testaments.</div>
+      </div>
+      <div class="scard">
+        <div class="st">Highlights That Travel With You</div>
+        <div class="sd">5 colors + new underline style that stay on the verse even when you switch languages.</div>
+      </div>
+      <div class="scard">
+        <div class="st">Smart Reference &amp; Fuzzy Search</div>
+        <div class="sd">Type “John 3:16”, search the whole Bible, or search Arabic without vowel marks.</div>
+      </div>
+    </div>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- 4 · PLANS, STREAKS & CLOUD SYNC -->
+<section class="art" id="features">
+  <div class="kente top"></div>
+  <div class="head">
+    <div class="eyebrow">New Since Original Release</div>
+    <h2 class="h1">Built for your <em>daily walk.</em></h2>
+  </div>
+  <div class="grid">
+    <div class="fcard">
+      <div class="ficon">📅</div>
+      <div class="ftitle">4 Reading Plans</div>
+      <div class="fdesc">365-Day Chronological Plan, New Testament in 30 Days, Psalms in 30 Days, and Proverbs in 30 Days.</div>
+    </div>
+    <div class="fcard">
+      <div class="ficon">☁️</div>
+      <div class="ftitle">Auto Cloud Sync</div>
+      <div class="fdesc">Optional account backs up your highlights, notes, and bookmarks across phone and laptop automatically.</div>
+    </div>
+    <div class="fcard">
+      <div class="ficon">🔥</div>
+      <div class="ftitle">Streaks &amp; Reading Stats</div>
+      <div class="fdesc">Track your daily streak, chapters completed per book, reading time, and daily verse reminders.</div>
+    </div>
+    <div class="fcard">
+      <div class="ficon">🎨</div>
+      <div class="ftitle">6 Fonts · 4 Themes · Share Cards</div>
+      <div class="fdesc">Sepia, Light, Dark &amp; OLED themes, Zen Mode, 1-tap WhatsApp sharing, and custom Verse Images.</div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>⚡ <b>94% Lighter Initial Load</b> — installs in 5 MB, caches extra languages on demand</div>
+    <span>v2.4</span>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- 5 · GET IT / CTA -->
+<section class="art" id="getit">
+  <div class="kente top"></div>
+  <div class="head">
+    <div class="eyebrow">Free on Google Play &amp; Web</div>
+    <h2 class="h1">Try the new update <em>today.</em></h2>
+  </div>
+  <div class="qrcard">
+    <img src="qr.svg" alt="">
+    <div class="cap">Scan to get the Android app</div>
+  </div>
+  <div class="links">
+    Search <b>“Bible in African Languages”</b> on Google Play<br>
+    or read on the web at <b>bible-app.leyesapps.workers.dev</b>
+  </div>
+  <div class="badges">
+    <span class="badge">22 Translations</span>
+    <span class="badge">100% Free</span>
+    <span class="badge">No Ads</span>
+    <span class="badge">Works Offline</span>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- STORY (1080x1920) -->
+<section class="art" id="story">
+  <div class="kente top"></div>
+  <div class="copy">
+    <span class="badge-pill">Big Update · v2.4</span>
+    <h1 class="h1">Now with <em>22 Bibles</em> &amp; Cloud Sync.</h1>
+    <p class="sub">Yorùbá · Igbo · Hausa · Pidgin · Swahili · Twi · Amharic · Ewe · Arabic · KJV · WEB · NLT · NIV · AMP</p>
+  </div>
+  <div class="list">
+    <div class="sp"><b>4-Way Compare</b>Side-by-side or interlinear</div>
+    <div class="sp"><b>Reading Plans</b>365-Day Chronological &amp; 30-Day</div>
+    <div class="sp"><b>Cloud Sync</b>Keep notes &amp; highlights safe</div>
+    <div class="sp"><b>Daily Streaks</b>Verse of the Day &amp; stats</div>
+  </div>
+  <div class="phone"><img src="shot-read.png" alt=""></div>
+  <div class="fade"></div>
+  <div class="foot">
+    <span class="pill">Bible in African Languages</span>
+    <div class="search">Free on Google Play · No Ads · Works Offline</div>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<!-- SQUARE (1080x1080) -->
+<section class="art" id="square">
+  <div class="kente top"></div>
+  <div class="copy">
+    <span class="badge-pill">What’s New · v2.4 Update</span>
+    <h1 class="h1">22 Translations. <em>Smarter Study.</em></h1>
+    <div class="bullets">
+      <div><span>✦</span> 11 African languages + Arabic, NLT, NIV, AMP, KJV &amp; WEB</div>
+      <div><span>✦</span> Compare up to 4 translations side by side</div>
+      <div><span>✦</span> 365-Day Chronological &amp; 30-Day reading plans</div>
+      <div><span>✦</span> Cross-references, streaks, stats &amp; optional Cloud Sync</div>
+      <div><span>✦</span> 1-tap WhatsApp share &amp; custom Verse Image cards</div>
+    </div>
+    <div class="scan">
+      <div class="qr"><img src="qr.svg" alt=""></div>
+      <div>Scan for Google Play or visit<br><b>bible-app.leyesapps.workers.dev</b></div>
+    </div>
+  </div>
+  <div class="phone"><img src="shot-read.png" alt=""></div>
+  <div class="foot">
+    <div class="brand">
+      <img src="icon.png" alt="">
+      <div>
+        <div class="name">Bible in African Languages</div>
+        <div class="sub">Free · No ads · Reads offline</div>
+      </div>
+    </div>
+  </div>
+  <div class="kente bottom"></div>
+</section>
+
+<script>
+  const id = new URLSearchParams(location.search).get('s') || 'cover';
+  document.getElementById(id).classList.add('on');
+</script>
+</body>
+</html>

@@ -2,6 +2,32 @@
 
 All notable changes to Bible in African Languages.
 
+## [2.4.1] — 2026-11-13
+
+### Security & Cloud Sync Fixes
+- **Per-user D1 key isolation** — Scoped D1 primary keys as `{userId}:{itemId}` with `WHERE user_id = excluded.user_id` conflict guards so highlights, notes, and bookmarks never collide across users.
+- **PBKDF2 password hashing** — Upgraded account password hashing in `worker/sync.ts` to 100,000-iteration `PBKDF2-SHA256` with per-user random salts, plus automatic transparent upgrade for legacy SHA-256 hashes on login.
+- **Constant-time JWT verification** — Switched JWT signature verification to Web Crypto `crypto.subtle.verify`.
+- **Batched D1 writes** — Replaced sequential per-row D1 queries in `handlePush` with a single `env.DB.batch()` execution.
+- **Cloud deletion sync** — Wired `deleteFromCloud` into `useStudyData` so removing a highlight, note, or bookmark locally also deletes it from D1 instead of resurrecting on pull.
+- **Cross-component auth sync** — Added `bible-sync-auth-change` event broadcasting in `useSync` so logging in or out inside `SyncPanel` immediately activates/deactivates `useAutoSync` without reloading.
+- **CamelCase timestamp mapping** — Normalized D1 `created_at` rows to `createdAt` on pull so Sidebar date sorting and auto-sync change detection work reliably.
+
+### New Features (since 2.4.0)
+- **Automatic cloud sync (`useAutoSync`)** — Debounced auto-push (3s after changes), auto-pull on tab focus, and periodic 5-minute background pulls.
+- **Reading statistics dashboard (`ReadingStatsPanel`, `useReadingStats`)** — Tracks sessions, total chapters read, reading time, and per-book completion progress.
+- **Push notifications (`NotificationSettingsPanel`, `notifications.ts`)** — Configurable daily verse and streak reminder browser notifications.
+- **Verse image generator (`VerseImageModal`)** — Create and download shareable verse graphics.
+
+### Bug Fixes & Polish
+- **Service Worker offline translation caching (v13)** — Added `.json` to dynamic asset caching so all 19 bundled Bible translations (`/bibles/*.json`) are cached on-demand for offline use, and bypassed `/api/*` routes in the Service Worker.
+- **Underline highlights in comparison view** — Passed `hlObj.style` to `getHighlightClass` in both side-by-side and interlinear comparison layouts.
+- **Reading stats session timer** — Switched `sessionStartTime` from state to `useRef` in `useReadingStats` to prevent `visibilitychange` listener loops.
+- **Streak reminder guard** — Added `lastStreakReminderDate` tracking so streak reminders fire at most once per day and only when the user has an active streak and hasn't read yet today.
+- **TypeScript fixes** — Fixed `onPullNow` prop type in `Sidebar.tsx` and `limitsNavigationsToAppBoundDomains` in `capacitor.config.ts`.
+
+---
+
 ## [2.4.0] — 2026-11-09
 
 ### New Features

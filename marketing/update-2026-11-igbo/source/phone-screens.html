@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ig">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 412px; height: 915px; overflow: hidden;
+    background: #F3EFE6; color: #2C221E;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  .view { display: none; width: 412px; height: 915px; position: relative; }
+  .view.on { display: block; }
+
+  /* Top App Header */
+  .header {
+    height: 56px; background: rgba(255,255,255,0.96);
+    border-bottom: 1px solid #E4E4E7;
+    padding: 0 14px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .h-left { display: flex; align-items: center; gap: 10px; }
+  .h-center { display: flex; align-items: center; gap: 6px; }
+  .book-pill {
+    background: #F4F4F5; color: #18181B; font-weight: 800; font-size: 11px;
+    padding: 6px 11px; border-radius: 999px; letter-spacing: 0.04em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .book-pill span { font-size: 8px; color: #A1A1AA; }
+  .trans-pill {
+    background: rgba(245,158,11,0.12); color: #D97706; font-weight: 800; font-size: 10px;
+    padding: 6px 10px; border-radius: 999px; display: flex; align-items: center; gap: 6px;
+  }
+  .info-btn {
+    background: rgba(245,158,11,0.12); color: #D97706; font-weight: 700; font-size: 10px;
+    width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  }
+  .cmp-btn {
+    background: rgba(245,158,11,0.12); color: #D97706; font-weight: 800; font-size: 10px;
+    width: 26px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  }
+  .cmp-btn.active { background: #F59E0B; color: #18181B; }
+
+  /* Reader Card */
+  .card {
+    margin: 18px 14px; background: #FDFBF7;
+    border: 1px solid #E6DEC8; border-radius: 24px;
+    padding: 22px 20px 26px;
+    box-shadow: 0 8px 24px rgba(44,34,30,0.06);
+  }
+  .ch-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; border-bottom: 1px solid rgba(44,34,30,0.12); margin-bottom: 16px;
+  }
+  .trans-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #7A6B58; margin-bottom: 4px;
+  }
+  .ch-title {
+    font-family: 'Playfair Display', Georgia, serif; font-size: 23px; font-weight: 700; color: #241A14;
+  }
+  .bm-btn {
+    background: rgba(44,34,30,0.05); border-radius: 999px; padding: 5px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; color: #574B3D; display: flex; align-items: center; gap: 4px;
+  }
+  .search-bar {
+    background: rgba(44,34,30,0.045); border-radius: 11px; padding: 8px 12px;
+    font-size: 11.5px; color: #8A7B68; display: flex; align-items: center; gap: 8px;
+    margin-bottom: 18px;
+  }
+  .verses {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 16px; line-height: 1.62; color: #241A14;
+  }
+  .v-block { margin-bottom: 14px; }
+  .v-num {
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    color: #D97706; vertical-align: super; margin-right: 4px;
+  }
+  .card-foot {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(44,34,30,0.1);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; font-weight: 700; color: #7A6B58;
+  }
+  .card-foot .mid {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* Comparison Lens Box */
+  .lens-box {
+    background: rgba(44,34,30,0.04); border: 1px solid rgba(44,34,30,0.1);
+    border-radius: 16px; padding: 12px 14px; margin-bottom: 18px;
+  }
+  .lens-row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .lens-tag {
+    background: rgba(245,158,11,0.16); color: #D97706; font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
+  }
+  .lens-lbl { font-size: 10.5px; font-weight: 600; color: #4A3E33; }
+  .lens-sel {
+    background: rgba(44,34,30,0.08); border-radius: 8px; padding: 5px 10px;
+    font-size: 9.5px; font-weight: 800; color: #241A14; display: inline-flex; align-items: center; gap: 10px;
+  }
+  .lens-row2 { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .mode-group {
+    background: rgba(44,34,30,0.05); border: 1px solid rgba(44,34,30,0.08);
+    border-radius: 8px; padding: 2px; display: inline-flex; gap: 2px;
+  }
+  .mode-btn { font-size: 9.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px; color: #6B5C4C; }
+  .mode-btn.on { background: #F59E0B; color: #18181B; font-weight: 800; }
+  .close-btn {
+    border: 1px solid rgba(244,63,94,0.25); color: #F43F5E; font-size: 9.5px; font-weight: 700;
+    padding: 4px 8px; border-radius: 8px;
+  }
+  .inter-item {
+    padding: 12px 12px; border-bottom: 1px dashed rgba(44,34,30,0.12);
+  }
+  .inter-head {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+    font-size: 9.5px; font-weight: 800; color: #9A8B78; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .inter-num {
+    width: 18px; height: 18px; border-radius: 999px; background: rgba(245,158,11,0.14);
+    color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 800;
+  }
+  .inter-pri {
+    border-left: 2.5px solid rgba(245,158,11,0.55); padding-left: 11px; margin-bottom: 10px;
+  }
+  .inter-sec {
+    border-left: 2.5px solid rgba(44,34,30,0.22); padding-left: 11px;
+  }
+  .vtag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 800;
+    padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; text-transform: uppercase;
+  }
+  .vtag.ibo { background: rgba(245,158,11,0.14); color: #D97706; }
+  .vtag.web { background: rgba(44,34,30,0.1); color: #4A3E33; }
+  .inter-txt {
+    font-family: 'Playfair Display', Georgia, serif; font-size: 15px; line-height: 1.5; color: #241A14;
+  }
+
+  /* Floating Nav Buttons */
+  .fab {
+    position: absolute; bottom: 20px; width: 40px; height: 40px; border-radius: 999px;
+    background: rgba(255,255,255,0.92); border: 1px solid #E4E4E7;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center; color: #52525B; font-weight: 700;
+  }
+  .fab.left { left: 14px; }
+  .fab.right { right: 14px; }
+</style>
+</head>
+<body>
+
+<!-- READ VIEW (IGBO PSALM 23) -->
+<div class="view" id="read">
+  <div class="header">
+    <div class="h-left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
+    <div class="h-center">
+      <div class="book-pill">ABU ỌMA 23 <span>▼</span></div>
+      <div class="trans-pill">IBO <span>▼</span></div>
+      <div class="info-btn">ℹ</div>
+      <div class="cmp-btn">⫴</div>
+    </div>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+  </div>
+
+  <div class="card">
+    <div class="ch-head">
+      <div>
+        <div class="trans-label">IGBO BIBLE (IBO)</div>
+        <div class="ch-title">Abu Ọma 23</div>
+      </div>
+      <div class="bm-btn">☆ BOOKMARK</div>
+    </div>
+
+    <div class="search-bar">🔍 Search in Abu Ọma 23...</div>
+
+    <div class="verses">
+      <div class="v-block"><span class="v-num">1</span>Abụ Ọma Devid. Onyenwe anyị na-azụ m dịka atụrụ, ọ dịghị ihe akọrọ m.</div>
+      <div class="v-block"><span class="v-num">2</span>Ọ na-eme ka m dinaa ala nʼebe ahịhịa ndụ na-eto, ọ na-edugharị m nʼakụkụ mmiri dị jụụ,</div>
+      <div class="v-block"><span class="v-num">3</span>ọ na-atụte mkpụrụobi m. Ọ na-edu m nʼụzọ niile nke ezi omume nʼihi aha ya.</div>
+      <div class="v-block"><span class="v-num">4</span>A sịkwarị na m na-aga ije, na ndagwurugwu nke ọchịchịrị ọnwụ, agaghị m atụ egwu ihe ọjọọ ọbụla; nʼihi na ị nọnyeere m, mkpọrọ gị na mkpanaka gị na-akasị m obi.</div>
+      <div class="v-block"><span class="v-num">5</span>Ị na-akwado tebul nʼihu m, nʼanya ndị iro m. I tere isi m mmanụ iko m na-ejubiga oke.</div>
+      <div class="v-block"><span class="v-num">6</span>Nʼezie, ịdị mma na ebere ga-agbaso m ogologo ụbọchị niile nke ndụ m, m ga-ebikwa nʼụlọ Onyenwe anyị mgbe niile ebighị ebi.</div>
+    </div>
+
+    <div class="card-foot">
+      <span>‹ Prev Chapter</span>
+      <span class="mid">ABU ỌMA 23 / 150</span>
+      <span>Next Chapter ›</span>
+    </div>
+  </div>
+
+  <div class="fab left">‹</div>
+  <div class="fab right">›</div>
+</div>
+
+<!-- COMPARE VIEW (IGBO + WEB INTERLINEAR PSALM 23) -->
+<div class="view" id="compare">
+  <div class="header">
+    <div class="h-left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
+    <div class="h-center">
+      <div class="book-pill">ABU ỌMA 23 <span>▼</span></div>
+      <div class="trans-pill">IBO <span>▼</span></div>
+      <div class="info-btn">ℹ</div>
+      <div class="cmp-btn active">⫴</div>
+    </div>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+  </div>
+
+  <div class="card">
+    <div class="ch-head">
+      <div>
+        <div class="trans-label">IGBO BIBLE (IBO)</div>
+        <div class="ch-title">Abu Ọma 23</div>
+      </div>
+      <div class="bm-btn">☆ BOOKMARK</div>
+    </div>
+
+    <div class="search-bar">🔍 Search in Abu Ọma 23...</div>
+
+    <div class="lens-box">
+      <div class="lens-row1">
+        <span class="lens-tag">Comparison Lens</span>
+        <span class="lens-lbl">Compare IBO with:</span>
+      </div>
+      <div class="lens-sel">WORLD ENGLISH BIBLE (WEB) <span>▼</span></div>
+      <div class="lens-row2">
+        <div class="mode-group">
+          <span class="mode-btn">⫴ Side-by-Side</span>
+          <span class="mode-btn on">☰ Interlinear</span>
+        </div>
+        <span class="close-btn">✕ Close</span>
+      </div>
+    </div>
+
+    <div class="inter-item">
+      <div class="inter-head"><span class="inter-num">1</span> VERSE</div>
+      <div class="inter-pri">
+        <span class="vtag ibo">IBO</span>
+        <div class="inter-txt">Abụ Ọma Devid. Onyenwe anyị na-azụ m dịka atụrụ, ọ dịghị ihe akọrọ m.</div>
+      </div>
+      <div class="inter-sec">
+        <span class="vtag web">WEB</span>
+        <div class="inter-txt">Yahweh is my shepherd: I shall lack nothing.</div>
+      </div>
+    </div>
+
+    <div class="inter-item">
+      <div class="inter-head"><span class="inter-num">2</span> VERSE</div>
+      <div class="inter-pri">
+        <span class="vtag ibo">IBO</span>
+        <div class="inter-txt">Ọ na-eme ka m dinaa ala nʼebe ahịhịa ndụ na-eto, ọ na-edugharị m nʼakụkụ mmiri dị jụụ,</div>
+      </div>
+      <div class="inter-sec">
+        <span class="vtag web">WEB</span>
+        <div class="inter-txt">He makes me lie down in green pastures. He leads me beside still waters.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fab left">‹</div>
+  <div class="fab right">›</div>
+</div>
+
+<script>
+  const v = new URLSearchParams(location.search).get('v') || 'read';
+  document.getElementById(v).classList.add('on');
+</script>
+</body>
+</html>

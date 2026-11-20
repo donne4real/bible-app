@@ -80,23 +80,25 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
+          pwd
           xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
-            -archivePath build/App.xcarchive \
+            -archivePath ${{ github.workspace }}/build/App.xcarchive \
             -sdk iphoneos \
             DEVELOPMENT_TEAM=$TEAM_ID \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="Bible App AppStore" \
             COMPILER_INDEX_STORE_ENABLE=NO
+          echo "Archive step done. Checking paths:"
+          ls -la ${{ github.workspace }}/build/ 2>/dev/null || echo "not at workspace/build"
+          find / -name "App.xcarchive" -maxdepth 6 2>/dev/null || echo "find found nothing"
 
       - name: Verify archive
         run: |
-          echo "Searching for xcarchive..."
-          find . -name "*.xcarchive" -maxdepth 5 2>/dev/null
-          ls -la ios/App/build/ 2>/dev/null || echo "not at ios/App/build"
-          ls -la build/ 2>/dev/null || echo "not at build/"
+          echo "Archive location: ${{ github.workspace }}/build/"
+          ls -laR ${{ github.workspace }}/build/ 2>/dev/null || echo "build dir missing"
 
       - name: Export IPA
         env:
@@ -109,8 +111,8 @@ jobs:
           cat ExportOptions.plist
 
           xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/export \
+            -archivePath ${{ github.workspace }}/build/App.xcarchive \
+            -exportPath ${{ github.workspace }}/build/export \
             -exportOptionsPlist ExportOptions.plist
 
       - name: Upload IPA artifact

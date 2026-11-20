@@ -14,7 +14,7 @@ jobs:
   build-ios-signed:
     name: Build Signed iOS App
     runs-on: macos-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,33 +47,26 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
         run: |
-          # Create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-          # Decode certificate (macOS base64 uses > redirect, not -o)
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
 
-          # Decode provisioning profile to temp location
           PP_TMP=$RUNNER_TEMP/profile.mobileprovision
           echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_TMP
 
-          # Extract UUID from profile for proper installation
           PP_UUID=$(security cms -D -i $PP_TMP 2>/dev/null | plutil -extract UUID raw -)
           echo "Provisioning profile UUID: $PP_UUID"
           PP_PATH=$RUNNER_TEMP/$PP_UUID.mobileprovision
           cp $PP_TMP $PP_PATH
 
-          # Create keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Import certificate
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
-          # Install provisioning profile (named by UUID)
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 
@@ -87,11 +80,10 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj \
+          xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
-            -archivePath $GITHUB_WORKSPACE/build/App.xcarchive \
+            -archivePath build/App.xcarchive \
             -sdk iphoneos \
             DEVELOPMENT_TEAM=$TEAM_ID \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
@@ -101,41 +93,31 @@ jobs:
 
       - name: Verify archive
         run: |
-          echo "Checking for archive at $GITHUB_WORKSPACE/build/App.xcarchive"
-          ls -la $GITHUB_WORKSPACE/build/
-          file $GITHUB_WORKSPACE/build/App.xcarchive
+          echo "Searching for xcarchive..."
+          find . -name "*.xcarchive" -maxdepth 5 2>/dev/null
+          ls -la ios/App/build/ 2>/dev/null || echo "not at ios/App/build"
+          ls -la build/ 2>/dev/null || echo "not at build/"
 
       - name: Export IPA
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          cat > ExportOptions.plist << PLIST_EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>method</key>
-  <string>app-store-connect</string>
-  <key>teamID</key>
-  <string>${TEAM_ID}</string>
-  <key>uploadBitcode</key>
-  <false/>
-  <key>uploadSymbols</key>
-  <true/>
-</dict>
-</plist>
-PLIST_EOF
+          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" -c "Add :teamID string $TEAM_ID" -c "Add :uploadSymbols bool true" ExportOptions.plist 2>/dev/null || true
+          if [ ! -f ExportOptions.plist ]; then
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>method</key>\n<string>app-store-connect</string>\n<key>teamID</key>\n<string>%s</string>\n<key>uploadSymbols</key>\n<true/>\n</dict>\n</plist>\n' "$TEAM_ID" > ExportOptions.plist
+          fi
+          cat ExportOptions.plist
 
           xcodebuild -exportArchive \
-            -archivePath $GITHUB_WORKSPACE/build/App.xcarchive \
-            -exportPath $GITHUB_WORKSPACE/build/export \
+            -archivePath build/App.xcarchive \
+            -exportPath build/export \
             -exportOptionsPlist ExportOptions.plist
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: bible-app-ios-signed
-          path: ${{ github.workspace }}/build/export/*.ipa
+          path: build/export/*.ipa
           retention-days: 30
 
       - name: Cleanup keychain

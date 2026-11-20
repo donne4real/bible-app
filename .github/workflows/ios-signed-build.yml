@@ -50,13 +50,19 @@ jobs:
           # Create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          PP_PATH=$RUNNER_TEMP/profile.mobileprovision
 
-          # Decode certificate
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          # Decode certificate (macOS base64 uses > redirect, not -o)
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
 
-          # Decode provisioning profile
-          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          # Decode provisioning profile to temp location
+          PP_TMP=$RUNNER_TEMP/profile.mobileprovision
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_TMP
+
+          # Extract UUID from profile for proper installation
+          PP_UUID=$(security cms -D -i $PP_TMP 2>/dev/null | plutil -extract UUID raw -)
+          echo "Provisioning profile UUID: $PP_UUID"
+          PP_PATH=$RUNNER_TEMP/$PP_UUID.mobileprovision
+          cp $PP_TMP $PP_PATH
 
           # Create keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -67,7 +73,7 @@ jobs:
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
-          # Install provisioning profile
+          # Install provisioning profile (named by UUID)
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
 

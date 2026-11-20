@@ -91,7 +91,7 @@ jobs:
           xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Release \
-            -archivePath build/App.xcarchive \
+            -archivePath $GITHUB_WORKSPACE/build/App.xcarchive \
             -sdk iphoneos \
             DEVELOPMENT_TEAM=$TEAM_ID \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
@@ -99,38 +99,43 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="Bible App AppStore" \
             COMPILER_INDEX_STORE_ENABLE=NO
 
+      - name: Verify archive
+        run: |
+          echo "Checking for archive at $GITHUB_WORKSPACE/build/App.xcarchive"
+          ls -la $GITHUB_WORKSPACE/build/
+          file $GITHUB_WORKSPACE/build/App.xcarchive
+
       - name: Export IPA
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          # Create export options plist
-          cat > ExportOptions.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>teamID</key>
-            <string>${TEAM_ID}</string>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>uploadSymbols</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-          
+          cat > ExportOptions.plist << PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store-connect</string>
+  <key>teamID</key>
+  <string>${TEAM_ID}</string>
+  <key>uploadBitcode</key>
+  <false/>
+  <key>uploadSymbols</key>
+  <true/>
+</dict>
+</plist>
+PLIST_EOF
+
           xcodebuild -exportArchive \
-            -archivePath ios/App/build/App.xcarchive \
-            -exportPath ios/App/build/export \
+            -archivePath $GITHUB_WORKSPACE/build/App.xcarchive \
+            -exportPath $GITHUB_WORKSPACE/build/export \
             -exportOptionsPlist ExportOptions.plist
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: bible-app-ios-signed
-          path: ios/App/build/export/*.ipa
+          path: ${{ github.workspace }}/build/export/*.ipa
           retention-days: 30
 
       - name: Cleanup keychain

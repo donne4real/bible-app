@@ -50,10 +50,10 @@ jobs:
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
+          echo "$BUILD_CERTIFICATE_BASE64" | tr -d '[:space:]' | base64 --decode > $CERTIFICATE_PATH
 
           PP_TMP=$RUNNER_TEMP/profile.mobileprovision
-          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_TMP
+          echo "$PROVISIONING_PROFILE_BASE64" | tr -d '[:space:]' | base64 --decode > $PP_TMP
           PP_UUID=$(security cms -D -i $PP_TMP | plutil -extract UUID raw -)
           echo "Profile UUID: $PP_UUID"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles

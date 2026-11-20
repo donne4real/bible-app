@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background gradient: deep indigo to warm gold -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a3e"/>
+      <stop offset="50%" stop-color="#2d1b69"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    
+    <!-- Glow effect for the book -->
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.35">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Book page gradient -->
+    <linearGradient id="pageGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e5e7eb"/>
+    </linearGradient>
+    
+    <!-- Light beam gradient -->
+    <linearGradient id="beam" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  
+  <!-- Ambient glow behind book -->
+  <circle cx="512" cy="460" r="360" fill="url(#glow)"/>
+  
+  <!-- Light beam from above -->
+  <path d="M 460 100 L 512 380 L 564 100 Z" fill="url(#beam)" opacity="0.4"/>
+  
+  <!-- Open book - left page -->
+  <path d="M 320 380 Q 320 360 340 360 L 500 360 L 500 680 Q 400 660 320 640 Z" fill="url(#pageGrad)" opacity="0.95"/>
+  
+  <!-- Open book - right page -->
+  <path d="M 704 380 Q 704 360 684 360 L 524 360 L 524 680 Q 624 660 704 640 Z" fill="url(#pageGrad)" opacity="0.95"/>
+  
+  <!-- Book spine -->
+  <line x1="512" y1="360" x2="512" y2="680" stroke="#d1d5db" stroke-width="3" opacity="0.5"/>
+  
+  <!-- Text lines on left page -->
+  <line x1="360" y1="410" x2="480" y2="410" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+  <line x1="360" y1="440" x2="470" y2="440" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <line x1="360" y1="470" x2="485" y2="470" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+  <line x1="360" y1="500" x2="460" y2="500" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
+  <line x1="360" y1="530" x2="475" y2="530" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+  
+  <!-- Text lines on right page -->
+  <line x1="544" y1="410" x2="664" y2="410" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+  <line x1="544" y1="440" x2="654" y2="440" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <line x1="544" y1="470" x2="669" y2="470" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+  <line x1="544" y1="500" x2="644" y2="500" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
+  <line x1="544" y1="530" x2="659" y2="530" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+  
+  <!-- Glowing cross/word symbol above book -->
+  <g opacity="0.9">
+    <!-- Vertical beam -->
+    <rect x="506" y="200" width="12" height="120" rx="6" fill="#fbbf24"/>
+    <!-- Horizontal beam -->
+    <rect x="472" y="230" width="80" height="12" rx="6" fill="#fbbf24"/>
+    <!-- Glow around cross -->
+    <circle cx="512" cy="250" r="50" fill="#fbbf24" opacity="0.15"/>
+    <circle cx="512" cy="250" r="30" fill="#fbbf24" opacity="0.25"/>
+  </g>
+  
+  <!-- Subtle sparkle dots -->
+  <circle cx="380" cy="300" r="3" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="640" cy="280" r="2" fill="#fbbf24" opacity="0.5"/>
+  <circle cx="450" cy="250" r="2.5" fill="#fbbf24" opacity="0.4"/>
+  <circle cx="580" cy="310" r="2" fill="#fbbf24" opacity="0.5"/>
+  <circle cx="350" cy="350" r="1.5" fill="#fbbf24" opacity="0.3"/>
+  <circle cx="680" cy="340" r="2" fill="#fbbf24" opacity="0.4"/>
+  
+  <!-- App name text -->
+  <text x="512" y="810" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="68" font-weight="700" fill="#ffffff" letter-spacing="4" opacity="0.95">BIBLE</text>
+  <text x="512" y="855" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="400" fill="#fbbf24" letter-spacing="5" opacity="0.85">IN AFRICAN LANGUAGES</text>
+</svg>

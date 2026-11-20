@@ -116,22 +116,49 @@ Add these secrets:
 
 ## Submitting to App Store
 
-### Option A: Using Transporter (Mac required)
-1. Download [Transporter](https://apps.apple.com/us/app/transporter/id1450874784) from Mac App Store
-2. Open Transporter
-3. Drag the IPA file into Transporter
-4. Click **Deliver**
+**You do not need a Mac.** The signed-build workflow can upload the IPA straight to
+App Store Connect / TestFlight. This repo is public, so the macOS runner minutes
+are free.
 
-### Option B: Using Xcode (Mac required)
-1. Open Xcode
-2. Window → Organizer
-3. Drag IPA file
-4. Click **Distribute App**
+### Option A (recommended): Upload from the workflow
 
-### Option C: Using altool (command line)
-```bash
-xcrun altool --upload-app -f bible-app.ipa -t ios --apiKey YOUR_API_KEY --apiIssuer YOUR_ISSUER_ID
-```
+The `iOS Signed Build` workflow has an `upload` toggle. Set it to `true` and the
+same run that builds and signs the IPA will upload it to TestFlight.
+
+**One-time setup — App Store Connect API key:**
+
+1. Go to [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
+2. Click **+**, name the key, and give it the **App Manager** role
+3. Click **Download API Key** — the `AuthKey_<KEY_ID>.p8` file is shown **once only**
+4. Note the **Issuer ID** (top of the same page) and the **Key ID** (in the filename)
+
+**Add to GitHub** (`Settings → Secrets and variables → Actions`):
+
+| Kind | Name | Value |
+|------|------|-------|
+| Variable | `APPSTORE_ISSUER_ID` | Issuer ID (UUID) |
+| Variable | `APPSTORE_API_KEY_ID` | Key ID (e.g. `ABC123DEF4`) |
+| Secret | `APPSTORE_API_PRIVATE_KEY` | Full contents of the `AuthKey_*.p8` file |
+
+**Also required in App Store Connect before the upload succeeds:**
+
+- An **app record** with the bundle ID `com.leyesapps.bibleapp` must already exist
+- **Test Information** (Beta App Description, Feedback Email, primary locale) —
+  until that is filled in the workflow uploads with `wait-for-processing: 'false'`,
+  and the build still lands in TestFlight, it just won't be auto-verified
+
+Once Test Information is set, change `wait-for-processing: 'false'` to `'true'` in
+`.github/workflows/ios-signed-build.yml` so the workflow waits for Apple to finish
+processing and reports any rejection.
+
+### Option B: Upload manually from a Mac
+
+Transporter or Xcode Organizer, as a fallback if you ever want a GUI.
+
+### Option C: Upload from a non-Mac machine
+
+Apple's own `xcrun altool` and Transporter are macOS-only, so this needs a Mac.
+Note that `altool --upload-app` is deprecated in favour of `altool --upload-package`.
 
 ---
 
@@ -181,20 +208,27 @@ export default config;
 
 | Item | Cost |
 |------|------|
-| Apple Developer Account | $99/year |
-| GitHub Actions (macOS runners) | Free (2,000 min/month) |
-| Additional minutes | ~$0.008/minute |
+| Apple Developer Program membership | $99/year (unavoidable) |
+| GitHub Actions macOS runner | **$0** — this repo is public, so macOS minutes are free |
+| Private-repo fallback | $0.062/min (a full signed build ≈ 12 min ≈ $0.75) |
+| App Store Connect API key | $0 |
+
+**No Mac rental is needed.** MacInCloud's cheapest plan ($4.40/day) costs more
+than several years of runner usage on this pipeline.
 
 ---
 
 ## Next Steps
 
 1. ✅ GitHub Actions workflows created
-2. ⏳ Get Apple Developer account
-3. ⏳ Create certificates and provisioning profiles
-4. ⏳ Add GitHub secrets
-5. ⏳ Run signed build workflow
-6. ⏳ Submit to App Store
+2. ✅ Apple Developer account + distribution certificate + provisioning profile
+3. ✅ Signing secrets (`BUILD_CERTIFICATE_BASE64`, `P12_PASSWORD`, `KEYCHAIN_PASSWORD`, `PROVISIONING_PROFILE_BASE64`, `TEAM_ID`) added
+4. ✅ Signed build workflow passing
+5. ⏳ Create the App Store Connect API key (App Manager role) and save the `.p8`
+6. ⏳ Add `APPSTORE_ISSUER_ID`, `APPSTORE_API_KEY_ID`, `APPSTORE_API_PRIVATE_KEY`
+7. ⏳ Confirm the app record exists with bundle ID `com.leyesapps.bibleapp`
+8. ⏳ Fill in Test Information in App Store Connect
+9. ⏳ Re-run the workflow with `upload = true`
 
 ---
 

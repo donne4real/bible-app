@@ -9,6 +9,11 @@ on:
       build_number:
         description: 'Build number (e.g., 1)'
         required: true
+      upload:
+        description: 'Upload the IPA to TestFlight (requires App Store Connect API key)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   build-ios-signed:
@@ -111,6 +116,48 @@ jobs:
             -archivePath ${{ github.workspace }}/build/App.xcarchive \
             -exportPath ${{ github.workspace }}/build/export \
             -exportOptionsPlist ExportOptions.plist
+
+      - name: Locate signed IPA
+        id: ipa
+        run: |
+          IPA=$(find "${{ github.workspace }}/build/export" -maxdepth 1 -name '*.ipa' | head -n 1)
+          if [ -z "$IPA" ]; then
+            echo "::error::No IPA found in build/export"
+            exit 1
+          fi
+          echo "Found signed IPA: $IPA"
+          echo "path=$IPA" >> "$GITHUB_OUTPUT"
+
+      - name: Verify App Store Connect credentials
+        if: inputs.upload == true
+        env:
+          ISSUER: ${{ vars.APPSTORE_ISSUER_ID }}
+          KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        run: |
+          missing=""
+          [ -z "$ISSUER" ] && missing="$missing APPSTORE_ISSUER_ID (variable)"
+          [ -z "$KEY_ID" ] && missing="$missing APPSTORE_API_KEY_ID (variable)"
+          [ -z "$PRIVATE_KEY" ] && missing="$missing APPSTORE_API_PRIVATE_KEY (secret)"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing App Store Connect credentials:$missing"
+            exit 1
+          fi
+
+      - name: Upload to TestFlight
+        if: inputs.upload == true
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: ${{ steps.ipa.outputs.path }}
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          uses-non-exempt-encryption: 'false'
+          # 'false' on the first upload: Apple requires Test Information
+          # (Beta App Description, Feedback Email, primary locale) before
+          # the action can wait for processing. Flip to 'true' once that
+          # form is filled in in App Store Connect.
+          wait-for-processing: 'false'
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4

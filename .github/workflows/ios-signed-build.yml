@@ -40,35 +40,22 @@ jobs:
       - name: Generate app icons and splash screens
         run: npx capacitor-assets generate --ios
 
-      - name: Import certificates and provisioning profile
+      - name: Import certificate and provisioning profile
+        uses: apple-actions/import-certificates@v3
+        with:
+          p12-file-base64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+
+      - name: Install provisioning profile
         env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
-
           PP_TMP=$RUNNER_TEMP/profile.mobileprovision
           echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_TMP
-
-          PP_UUID=$(security cms -D -i $PP_TMP 2>/dev/null | plutil -extract UUID raw -)
-          echo "Provisioning profile UUID: $PP_UUID"
-          PP_PATH=$RUNNER_TEMP/$PP_UUID.mobileprovision
-          cp $PP_TMP $PP_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
+          PP_UUID=$(security cms -D -i $PP_TMP | plutil -extract UUID raw -)
+          echo "Profile UUID: $PP_UUID"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp $PP_TMP ~/Library/MobileDevice/Provisioning\ Profiles/$PP_UUID.mobileprovision
 
       - name: Update version
         run: |
@@ -80,7 +67,6 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          pwd
           xcodebuild -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
@@ -91,14 +77,13 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="Bible App AppStore" \
             COMPILER_INDEX_STORE_ENABLE=NO
-          echo "Archive step done. Checking paths:"
-          ls -la ${{ github.workspace }}/build/ 2>/dev/null || echo "not at workspace/build"
-          find / -name "App.xcarchive" -maxdepth 6 2>/dev/null || echo "find found nothing"
 
-      - name: Verify archive
+      - name: Check archive
         run: |
-          echo "Archive location: ${{ github.workspace }}/build/"
-          ls -laR ${{ github.workspace }}/build/ 2>/dev/null || echo "build dir missing"
+          echo "Checking for archive..."
+          ls -la ${{ github.workspace }}/build/ || echo "no build dir"
+          find ${{ runner.temp }} -name "*.xcarchive" 2>/dev/null || true
+          find ~/Library/Developer/Xcode/Archives -name "*.xcarchive" 2>/dev/null || true
 
       - name: Export IPA
         env:
@@ -108,7 +93,6 @@ jobs:
           if [ ! -f ExportOptions.plist ]; then
             printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>method</key>\n<string>app-store-connect</string>\n<key>teamID</key>\n<string>%s</string>\n<key>uploadSymbols</key>\n<true/>\n</dict>\n</plist>\n' "$TEAM_ID" > ExportOptions.plist
           fi
-          cat ExportOptions.plist
 
           xcodebuild -exportArchive \
             -archivePath ${{ github.workspace }}/build/App.xcarchive \
@@ -119,10 +103,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bible-app-ios-signed
-          path: build/export/*.ipa
+          path: ${{ github.workspace }}/build/export/*.ipa
           retention-days: 30
-
-      - name: Cleanup keychain
-        if: always()
-        run: |
-          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db

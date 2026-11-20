@@ -102,9 +102,9 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" -c "Add :teamID string $TEAM_ID" -c "Add :uploadSymbols bool true" ExportOptions.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" -c "Add :teamID string $TEAM_ID" -c "Add :uploadSymbols bool true" -c "Add :signingStyle string manual" -c "Add :provisioningProfiles dict" -c "Add :provisioningProfiles:com.leyesapps.bibleapp string Bible App AppStore" ExportOptions.plist 2>/dev/null || true
           if [ ! -f ExportOptions.plist ]; then
-            printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>method</key>\n<string>app-store-connect</string>\n<key>teamID</key>\n<string>%s</string>\n<key>uploadSymbols</key>\n<true/>\n</dict>\n</plist>\n' "$TEAM_ID" > ExportOptions.plist
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>method</key>\n<string>app-store-connect</string>\n<key>teamID</key>\n<string>%s</string>\n<key>uploadSymbols</key>\n<true/>\n<key>signingStyle</key>\n<string>manual</string>\n<key>provisioningProfiles</key>\n<dict>\n<key>com.leyesapps.bibleapp</key>\n<string>Bible App AppStore</string>\n</dict>\n</dict>\n</plist>\n' "$TEAM_ID" > ExportOptions.plist
           fi
 
           xcodebuild -exportArchive \

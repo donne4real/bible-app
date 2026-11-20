@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.wordupafrica.biblereader',
+  appId: 'com.leyesapps.bibleapp',
   appName: 'Bible in African Languages',
   webDir: 'dist',
   server: {

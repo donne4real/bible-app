@@ -30,14 +30,20 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       {/* Font family */}
       <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">Typography Font</label>
-        <div className="grid grid-cols-2 gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
+        <div className="grid grid-cols-3 gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
           {([
             { id: 'serif', label: 'Serif', preview: 'Playfair' },
             { id: 'sans', label: 'Sans', preview: 'Inter' },
+            { id: 'mono', label: 'Mono', preview: 'JetBrains' },
             { id: 'literata', label: 'Literata', preview: 'Reading' },
             { id: 'merriweather', label: 'Merriweather', preview: 'Classic' },
             { id: 'noto-serif', label: 'Noto Serif', preview: 'Global' },
-            { id: 'mono', label: 'Mono', preview: 'JetBrains' },
+            { id: 'source-serif', label: 'Source Serif', preview: 'Modern' },
+            { id: 'crimson', label: 'Crimson', preview: 'Book' },
+            { id: 'eb-garamond', label: 'EB Garamond', preview: 'Refined' },
+            { id: 'lora', label: 'Lora', preview: 'Balanced' },
+            { id: 'vollkorn', label: 'Vollkorn', preview: 'Robust' },
+            { id: 'spectral', label: 'Spectral', preview: 'Screen' },
           ] as const).map(f => (
             <button key={f.id} onClick={() => onUpdateSettings({ fontFamily: f.id as any })} className={`py-1.5 px-2 rounded-md text-[11px] font-medium transition text-left ${settings.fontFamily === f.id ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
               <span className="block leading-tight">{f.label}</span>
@@ -50,9 +56,9 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
       {/* Font size */}
       <div className="mb-4">
         <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2">Text Size</label>
-        <div className="flex items-center justify-between gap-1 p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-          {(['sm', 'md', 'lg', 'xl', '2xl', '3xl'] as const).map(sz => (
-            <button key={sz} onClick={() => onUpdateSettings({ fontSize: sz })} className={`flex-1 py-1 text-xs rounded-md font-sans transition capitalize ${settings.fontSize === sz ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-600'}`}>{sz}</button>
+        <div className="flex items-center justify-between gap-0.5 p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+          {(['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'] as const).map(sz => (
+            <button key={sz} onClick={() => onUpdateSettings({ fontSize: sz })} className={`flex-1 py-1 text-[10px] rounded-md font-sans transition capitalize ${settings.fontSize === sz ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-600'}`}>{sz}</button>
           ))}
         </div>
       </div>
@@ -79,6 +85,27 @@ export default function ThemeSelector({ settings, onUpdateSettings, isOpen, onCl
           {(['tight', 'normal', 'relaxed', 'loose'] as const).map(lh => (
             <button key={lh} onClick={() => onUpdateSettings({ lineHeight: lh })} className={`py-1 rounded text-[11px] font-medium capitalize transition ${settings.lineHeight === lh ? 'bg-white dark:bg-zinc-700 text-zinc-950 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>{lh}</button>
           ))}
+        </div>
+      </div>
+
+      {/* Accessibility */}
+      <div className="mb-4">
+        <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-1.5">Accessibility</label>
+        <div className="space-y-1.5">
+          <button
+            onClick={() => onUpdateSettings({ dyslexicMode: !settings.dyslexicMode })}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition text-left ${settings.dyslexicMode ? 'bg-amber-500/15 border border-amber-500/30' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+          >
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">Dyslexia-Friendly</span>
+            <span className={`text-[9px] uppercase tracking-wider font-bold ${settings.dyslexicMode ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{settings.dyslexicMode ? 'ON' : 'OFF'}</span>
+          </button>
+          <button
+            onClick={() => onUpdateSettings({ highContrast: !settings.highContrast })}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition text-left ${settings.highContrast ? 'bg-amber-500/15 border border-amber-500/30' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+          >
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">High Contrast</span>
+            <span className={`text-[9px] uppercase tracking-wider font-bold ${settings.highContrast ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{settings.highContrast ? 'ON' : 'OFF'}</span>
+          </button>
         </div>
       </div>
 

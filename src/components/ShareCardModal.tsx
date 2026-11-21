@@ -412,6 +412,31 @@ export default function ShareCardModal({ isOpen, onClose, selectedVerses, transl
                   {navigator.share ? 'System Share' : 'Copy Slate'}
                 </button>
               </div>
+
+              {/* Social media sharing */}
+              <div className="flex items-center gap-1.5 mt-2">
+                {(() => {
+                  const shareText = encodeURIComponent(getFullCopyText());
+                  const shareUrl = encodeURIComponent('https://bible-app.leyesapps.workers.dev');
+                  return [
+                    { name: 'WhatsApp', color: 'bg-green-500 hover:bg-green-600', url: `https://wa.me/?text=${shareText}%20${shareUrl}` },
+                    { name: 'Twitter', color: 'bg-sky-500 hover:bg-sky-600', url: `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}` },
+                    { name: 'Telegram', color: 'bg-blue-500 hover:bg-blue-600', url: `https://t.me/share/url?url=${shareUrl}&text=${shareText}` },
+                    { name: 'Facebook', color: 'bg-indigo-600 hover:bg-indigo-700', url: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${shareText}` },
+                  ].map(s => (
+                    <a
+                      key={s.name}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex-1 ${s.color} text-white rounded-lg py-1.5 text-[10px] font-bold text-center transition active:scale-95`}
+                      title={`Share on ${s.name}`}
+                    >
+                      {s.name}
+                    </a>
+                  ));
+                })()}
+              </div>
             </div>
           </div>
         </motion.div>

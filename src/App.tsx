@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Search,
   BookOpen,
   X,
@@ -233,6 +234,75 @@ export default function App() {
   const { recordChapterRead, getStreak, stats: readingStats } = useReadingStats();
   const streak = getStreak();
   const [showReadingStats, setShowReadingStats] = useState(false);
+
+  // ── Scroll-to-top state ──────────────────────────────────────────────
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // ── Chapter preloading ───────────────────────────────────────────────
+  const preloadedCache = useRef<Map<string, Verse[]>>(new Map());
+  useEffect(() => {
+    const preloadChapter = async (bookId: string, bookName: string, chapter: number, translation: string) => {
+      const key = `${translation}_${bookId}_${chapter}`;
+      if (preloadedCache.current.has(key)) return;
+      try {
+        const result = await getVerses(translation, bookId, bookName, chapter);
+        if (result) preloadedCache.current.set(key, result);
+      } catch { /* ignore preload failures */ }
+    };
+    // Preload next chapter
+    if (canGoNext) {
+      preloadChapter(selectedBook.id, selectedBook.name, selectedChapter + 1, settings.translation);
+    }
+    // Preload previous chapter
+    if (canGoPrev) {
+      preloadChapter(selectedBook.id, selectedBook.name, selectedChapter - 1, settings.translation);
+    }
+  }, [selectedBook, selectedChapter, settings.translation, canGoNext, canGoPrev]);
+
+  // ── Progressive verse reveal (IntersectionObserver) ──────────────────
+  useEffect(() => {
+    if (loading || verses.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.remove('verse-hidden');
+            entry.target.classList.add('verse-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.01, rootMargin: '80px 0px' }
+    );
+    const observeVerses = () => {
+      const verseElements = document.querySelectorAll('[id^="verse-line-"]');
+      if (verseElements.length === 0) {
+        setTimeout(observeVerses, 50);
+        return;
+      }
+      verseElements.forEach(el => {
+        el.classList.add('verse-hidden');
+        observer.observe(el);
+      });
+    };
+    observeVerses();
+    // Fallback: make all verses visible after 800ms
+    const fallback = setTimeout(() => {
+      document.querySelectorAll('.verse-hidden').forEach(el => {
+        el.classList.remove('verse-hidden');
+        el.classList.add('verse-visible');
+      });
+    }, 800);
+    return () => { observer.disconnect(); clearTimeout(fallback); };
+  }, [loading, verses]);
+
+  // ── Scroll listener for scroll-to-top button ─────────────────────────
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // ── Notifications ───────────────────────────────────────────────────
   useEffect(() => {
@@ -890,7 +960,7 @@ export default function App() {
 
                 {/* Verse display — single column */}
                 {!isComparing && (
-                  <div dir={primaryDir} className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} ${getLineHeightClass()} ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                  <div dir={primaryDir} className={`${getBodyFontFamilyClass()} ${getFontSizeClass()} ${getLineHeightClass()} ${settings.dyslexicMode ? 'dyslexic-mode' : ''} ${primaryDir === 'rtl' ? 'text-right' : 'text-left'}`}>
                     {getFilteredVerses(verses).length === 0 ? (
                       <div className="text-center py-10 opacity-60 text-xs">No verses matching "{activeSearch}".</div>
                     ) : (
@@ -1070,6 +1140,23 @@ export default function App() {
             </button>
           </>
         )}
+
+        {/* Scroll-to-top button */}
+        <AnimatePresence>
+          {showScrollTop && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="fixed bottom-20 right-3 sm:right-5 z-30 w-10 h-10 rounded-full bg-amber-500/90 backdrop-blur text-white shadow-lg flex items-center justify-center hover:bg-amber-600 active:scale-90 transition cursor-pointer"
+              aria-label="Scroll to top"
+              title="Scroll to top"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Share card modal (lazy-loaded) */}
         <Suspense fallback={null}>

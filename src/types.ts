@@ -51,11 +51,13 @@ export interface Bookmark {
 
 export interface ReaderSettings {
   translation: string;
-  fontSize: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-  fontFamily: 'serif' | 'sans' | 'mono' | 'literata' | 'merriweather' | 'noto-serif';
+  fontSize: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  fontFamily: 'serif' | 'sans' | 'mono' | 'literata' | 'merriweather' | 'noto-serif' | 'source-serif' | 'crimson' | 'eb-garamond' | 'lora' | 'vollkorn' | 'spectral';
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
   zenMode: boolean;
   theme: 'light' | 'sepia' | 'dark' | 'charcoal';
+  dyslexicMode: boolean;
+  highContrast: boolean;
 }
 
 export interface VerseCardStyle {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, BookOpen, Clock, Calendar, TrendingUp, Award, RotateCcw } from 'lucide-react';
+import { X, BookOpen, Clock, Calendar, TrendingUp, Award, RotateCcw, Star, Zap, Crown } from 'lucide-react';
 import { useReadingStats } from '../hooks/useReadingStats';
 import { BIBLE_BOOKS } from '../bibleStructure';
 import { motion, AnimatePresence } from 'motion/react';
@@ -135,6 +135,46 @@ export default function ReadingStatsPanel({ isOpen, onClose }: ReadingStatsPanel
                     </div>
                   </div>
                 </div>
+
+                {/* Streak Badges */}
+                {streak.current > 0 && (
+                  <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
+                    <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500" />
+                      Streak Milestones
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {([
+                        { days: 7, label: 'Committed', icon: Star, color: 'amber' },
+                        { days: 30, label: 'Dedicated', icon: Zap, color: 'blue' },
+                        { days: 100, label: 'Champion', icon: Award, color: 'green' },
+                        { days: 365, label: 'Legendary', icon: Crown, color: 'purple' },
+                      ] as const).map(badge => {
+                        const earned = streak.current >= badge.days;
+                        const progress = Math.min((streak.current / badge.days) * 100, 100);
+                        const Icon = badge.icon;
+                        return (
+                          <motion.div
+                            key={badge.days}
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: earned ? [1, 1.1, 1] : 1 }}
+                            transition={{ duration: 0.5 }}
+                            className={`text-center p-2 rounded-lg ${earned ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-zinc-100 dark:bg-zinc-700/50 opacity-50'}`}
+                          >
+                            <Icon className={`w-5 h-5 mx-auto mb-1 ${earned ? 'text-amber-500' : 'text-zinc-400'}`} />
+                            <div className={`text-[10px] font-bold ${earned ? 'text-amber-700 dark:text-amber-300' : 'text-zinc-500'}`}>{badge.label}</div>
+                            <div className="text-[9px] text-zinc-400 mt-0.5">{badge.days}d</div>
+                            {!earned && (
+                              <div className="mt-1 h-1 bg-zinc-200 dark:bg-zinc-600 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${progress}%` }} />
+                              </div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Overall Progress */}
                 <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">

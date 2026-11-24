@@ -44,7 +44,7 @@
         <span class="text-xs font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">Legal Information</span>
         <h1 class="text-3xl sm:text-4xl font-extrabold text-white mt-4 tracking-tight">Privacy Policy</h1>
         <p class="text-xs text-slate-400 mt-2">Privacy Policy for the Bible in African Languages mobile, web, and PWA application.</p>
-        <p class="text-xs text-slate-500 mt-1">Effective Date: June 4, 2026 • Last Updated: June 4, 2026</p>
+        <p class="text-xs text-slate-500 mt-1">Effective Date: June 4, 2026 • Last Updated: November 21, 2026</p>
       </div>
 
       <!-- Introduction Card -->
@@ -55,7 +55,7 @@
           </svg>
           Our Offline-First Privacy Pledge
         </h2>
-        Bible in African Languages is designed to respect your spiritual journey and your personal data. We operate under a strict, non-invasive **offline-first policy**. We do not run background telemetry tracking, sell advertisements, or harvest personal details. Your prayer logs, Bible readings, highlights, commentary selections, and offline downloads stay exactly where they belong: **privately stored on your own physical device**.
+        Bible in African Languages is designed to respect your spiritual journey and your personal data. We operate under a strict, non-invasive **offline-first policy**. We do not run background telemetry tracking, sell advertisements, or harvest personal details. Your prayer logs, Bible readings, highlights, commentary selections, and offline downloads stay exactly where they belong: <strong>privately stored on your own physical device</strong> — with one deliberate exception: if you choose to turn on Cloud Sync, the data you explicitly sync is stored on our server so it can follow you across devices. That exception is described in full in Section 2.
       </div>
 
       <!-- Body Content -->
@@ -65,24 +65,44 @@
         <section class="scroll-mt-24">
           <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">1. Information We Do Not Collect</h2>
           <p class="mb-3">
-            Because this is an offline-friendly application, we do not require you to create an account, register your email, or link a social networking profile to browse or search the Bible. 
+            Because this is an offline-friendly application, we do not require you to create an account, register your email, or link a social networking profile to browse or search the Bible. The only data we ever hold on a server is the data you explicitly choose to sync — see Section 2. 
           </p>
           <ul class="list-disc pl-5 space-y-1 text-slate-400">
             <li>We do not collect names, phone numbers, or mailing addresses.</li>
             <li>We do not record your locations or track your IP address for promotional purposes.</li>
-            <li>We do not capture your reading progress, bookmark timestamps, or audio listening history on any external cloud server.</li>
+            <li>We do not capture your reading progress, bookmark timestamps, or audio listening history on any external cloud server — except the highlights, notes, bookmarks and settings you explicitly sync to Cloud Sync (Section 2).</li>
           </ul>
         </section>
 
         <!-- SECTION 2 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">2. Web Manifest, Downloads, & On-Device Caching</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">2. Cloud Sync (Optional Account)</h2>
+          <p class="mb-3">
+            Reading, searching and highlighting never require an account. However, if you choose to enable <strong>Cloud Sync</strong> so that your study data follows you across devices, we store the following on our server (Cloudflare D1, an encrypted cloud database):
+          </p>
+          <ul class="list-disc pl-5 space-y-1 text-slate-400">
+            <li>Your email address, used as your sign-in name and to associate your synced data with your account.</li>
+            <li>A salted PBKDF2-SHA256 hash of your password (100,000 iterations). We never store your password in a readable form.</li>
+            <li>The date your account was created and the date of your last sign-in.</li>
+            <li>Your highlights, notes, bookmarks and app settings, so they can be restored on another device.</li>
+          </ul>
+          <p class="mt-3">
+            This data is used only to operate the sync feature. We do not use it for advertising, we do not sell it, we do not share it with third parties, and we do not use it to track you across apps or websites.
+          </p>
+          <p class="mt-3">
+            To delete your Cloud Sync account and all of its data, contact us using the address in Section 9. We remove your email address and every synced highlight, note, bookmark and setting from our server within 30 days of your request.
+          </p>
+        </section>
+
+        <!-- SECTION 3 -->
+        <section class="scroll-mt-24">
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">3. Web Manifest, Downloads, & On-Device Caching</h2>
           <p class="mb-3">
             Bible in African Languages integrates custom Progressive Web App (PWA) tools to enable fast, offline reading when internet access in deep communities is unstable or limited:
           </p>
           <ul class="list-disc pl-5 space-y-2 text-slate-400">
             <li>
-              <strong class="text-slate-200">Device LocalStorage & Databases:</strong> Any reading plans started, customized verses bookmarked, highlights painted (Yellow, Orange, Green, Blue), or custom notes written are stored client-side in your local browser storage (<code class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-xs">localStorage</code>) or web database. This data never leaves your device unless you manually use the share feature to export a beautiful verse image.
+              <strong class="text-slate-200">Device LocalStorage & Databases:</strong> Any reading plans started, customized verses bookmarked, highlights painted (Yellow, Orange, Green, Blue), or custom notes written are stored client-side in your local browser storage (<code class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-xs">localStorage</code>) or web database. This data stays on your device unless you turn on Cloud Sync (Section 2) or manually use the share feature to export a verse image.
             </li>
             <li>
               <strong class="text-slate-200">Offline Bible Downloads:</strong> Complete book and text caches (e.g., WEB, KJV, or customized African Bible Translations) downloaded through our standard offline sync portal are stored solely in your browser's Cache API storage. Removing the app or clearing cookies will clear these downloads.
@@ -90,9 +110,9 @@
           </ul>
         </section>
 
-        <!-- SECTION 3 -->
+        <!-- SECTION 4 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">3. App Permissions</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">4. App Permissions</h2>
           <p class="mb-3">
             When compiled for Android or viewed inside a mobile web browser, the app may request specific system-level permissions for core interactive elements:
           </p>
@@ -108,43 +128,43 @@
           </div>
         </section>
 
-        <!-- SECTION 4 -->
+        <!-- SECTION 5 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">4. Cookies and Third-Party Services</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">5. Cookies and Third-Party Services</h2>
           <p class="mb-3">
             We use zero tracking pixels (such as Meta pixel, TikTok pixel) or behavioral ad cookies. Our web host's CDN may apply standard logging rules for request-distribution and routing (such as standard anonymized server connection files) which are strictly technical and non-identifiable.
           </p>
         </section>
 
-        <!-- SECTION 5 -->
-        <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">5. Children's Privacy</h2>
-          <p class="mb-3">
-            Our app serves scripture resources to everyone of all ages and is entirely safe for children. Since we do not request, register, collect, or store any personal information of any kind from any user, we do not knowingly solicit children's personal information. If you have any inquiries regarding safety, feel free to contact us immediately.
-          </p>
-        </section>
-
         <!-- SECTION 6 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">6. Security of Your Data</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">6. Children's Privacy</h2>
           <p class="mb-3">
-            Because all of your study data resides strictly inside your current device's local memory or browser cache, its integrity depends directly on the security of your device. We recommend securing your smartphone with standard codes/locks to restrict unauthorized physical access to your highlighted personal logs.
+            Our app serves scripture resources to everyone of all ages and is entirely safe for children. We do not knowingly solicit children's personal information. Because the app works fully offline without an account, we do not collect any personal information from a child unless an adult explicitly sets up and uses the Cloud Sync account described in Section 2. If you have any inquiries regarding safety, feel free to contact us immediately.
           </p>
         </section>
 
         <!-- SECTION 7 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">7. Changes to This Policy</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">7. Security of Your Data</h2>
           <p class="mb-3">
-            We reserve the right to refine or expand this Privacy Policy structure if we add cloud-sync features (such as opt-in online user accounts) in future releases. Any changes made will be posted publicly with an updated effective date.
+            Your study data lives in your device's local storage or browser cache, and its integrity depends directly on the security of your device. We recommend securing your smartphone with standard codes/locks to restrict unauthorized physical access to your highlighted personal logs. When you use Cloud Sync, your synced data is stored on Cloudflare's encrypted D1 database, your password is held only as a salted PBKDF2-SHA256 hash, and access requires a signed session token issued by our server.
           </p>
         </section>
 
         <!-- SECTION 8 -->
         <section class="scroll-mt-24">
-          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">8. Contact Information</h2>
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">8. Changes to This Policy</h2>
           <p class="mb-3">
-            If you have questions, feedback, or suggestions about our privacy protections or offline-first implementation, please contact our support desk via:
+            We reserve the right to refine or expand this Privacy Policy as the app changes — for example if we add new sync features or new third-party scripture providers. Any changes made will be posted publicly with an updated effective date.
+          </p>
+        </section>
+
+        <!-- SECTION 9 -->
+        <section class="scroll-mt-24">
+          <h2 class="text-lg font-bold text-white mb-3 tracking-tight border-l-2 border-amber-500 pl-3">9. Contact Information</h2>
+          <p class="mb-3">
+            If you have questions, feedback, or suggestions about our privacy protections, or you would like to request deletion of your Cloud Sync account and its data, please contact our support desk via:
           </p>
           <div class="mt-4 bg-slate-950/60 p-4 rounded-xl border border-slate-850 inline-flex items-center gap-3">
             <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

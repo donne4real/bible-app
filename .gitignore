@@ -28,3 +28,8 @@ superseded/
 
 # Downloaded iOS build artifacts
 ios-builds/
+ios-artifact/
+*.ipa
+
+# App Store Connect API private keys (AuthKey_<KEY_ID>.p8)
+*.p8

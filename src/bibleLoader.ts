@@ -26,6 +26,9 @@ type TranslationData = { [bookId: string]: BookData };
 // Licensed translations (NLT, AMP, NIV) aren't bundled — they're fetched live, per chapter,
 // from a Cloudflare Worker proxy in front of api.bible (see worker/index.ts). This keeps the
 // API key server-side and avoids bulk-redistributing copyrighted text.
+const WORKER_BASE = 'https://bible-app.leyesapps.workers.dev';
+const API_BASE = (window as any).Capacitor ? WORKER_BASE : '';
+
 const REMOTE_TRANSLATIONS = new Set(['nlt', 'amp', 'niv']);
 export function isRemoteTranslation(translationId: string): boolean {
   return REMOTE_TRANSLATIONS.has(translationId);
@@ -51,7 +54,7 @@ async function loadRemoteChapter(
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(`/api/bible/${translationId}/${bookId}/${chapter}`, { signal: ctrl.signal });
+    const res = await fetch(`${API_BASE}/api/bible/${translationId}/${bookId}/${chapter}`, { signal: ctrl.signal });
     clearTimeout(timer);
     if (!res.ok) return null; // not cached — allow retry
     data = await res.json();

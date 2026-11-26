@@ -6,7 +6,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Highlight, Note, Bookmark } from '../types';
 
-const SYNC_API = '/api/sync';
+const WORKER_BASE = 'https://bible-app.leyesapps.workers.dev';
+const SYNC_API = (window as any).Capacitor
+  ? `${WORKER_BASE}/api/sync`
+  : '/api/sync';
 const TOKEN_KEY = 'bible_sync_token';
 const USER_KEY = 'bible_sync_user';
 const SYNC_AUTH_EVENT = 'bible-sync-auth-change';

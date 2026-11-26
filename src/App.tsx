@@ -480,7 +480,7 @@ export default function App() {
 
         {/* Header */}
         {!settings.zenMode && (
-          <header className="sticky top-0 bg-white/95 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 z-30 transition-colors duration-200">
+          <header className="sticky top-0 pt-[env(safe-area-inset-top)] bg-white/95 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 z-30 transition-colors duration-200">
             <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
 
               {/* Left: menu + brand */}

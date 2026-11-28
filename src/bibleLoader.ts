@@ -29,6 +29,11 @@ type TranslationData = { [bookId: string]: BookData };
 const WORKER_BASE = 'https://bible-app.leyesapps.workers.dev';
 const API_BASE = (window as any).Capacitor ? WORKER_BASE : '';
 
+// Log API base on module load to verify Capacitor detection
+if (typeof window !== 'undefined') {
+  console.log(`[bibleLoader] API_BASE: ${API_BASE || '(relative paths)'}, Capacitor: ${!!(window as any).Capacitor}`);
+}
+
 const REMOTE_TRANSLATIONS = new Set(['nlt', 'amp', 'niv']);
 export function isRemoteTranslation(translationId: string): boolean {
   return REMOTE_TRANSLATIONS.has(translationId);
@@ -52,13 +57,18 @@ async function loadRemoteChapter(
 
   let data: ChapterVerses;
   try {
+    const url = `${API_BASE}/api/bible/${translationId}/${bookId}/${chapter}`;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(`${API_BASE}/api/bible/${translationId}/${bookId}/${chapter}`, { signal: ctrl.signal });
+    const res = await fetch(url, { signal: ctrl.signal });
     clearTimeout(timer);
-    if (!res.ok) return null; // not cached — allow retry
+    if (!res.ok) {
+      console.warn(`[bibleLoader] Remote chapter fetch failed: ${url} -> ${res.status}`);
+      return null; // not cached — allow retry
+    }
     data = await res.json();
-  } catch {
+  } catch (err) {
+    console.error(`[bibleLoader] Remote chapter fetch error: ${translationId}/${bookId}/${chapter}`, err);
     return null; // network error or timeout — allow retry
   }
 

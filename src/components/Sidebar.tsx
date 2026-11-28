@@ -109,7 +109,7 @@ export default function Sidebar({
   const usedColors = [...new Set(highlights.map(h => h.color))];
 
   return (
-    <div id="study-hub-sidebar" className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-45 flex flex-col shadow-2xl animate-slide-right pt-[env(safe-area-inset-top)]">
+    <div id="study-hub-sidebar" className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-45 flex flex-col shadow-2xl animate-slide-right safe-area-top">
       
       {/* Header */}
       <div className="p-4 border-b border-zinc-150 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-950">

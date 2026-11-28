@@ -16,7 +16,10 @@ const config: CapacitorConfig = {
   ios: {
     scheme: 'App',
     webContentsDebuggingEnabled: false,
-    limitsNavigationsToAppBoundDomains: true,
+    // Set to false to allow fetch requests to external domains (worker API)
+    // If you want to keep this true, you must add the worker domain to
+    // WKAppBoundDomains in the Xcode project's Info.plist
+    limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
     SplashScreen: {
